@@ -1,8 +1,8 @@
 import qalitesite
 
-env = {'SECRET_KEY':'dev', }
+env = {'SECRET_KEY':'dev'}
 
-application = qalitesite.create_app()
+application = qalitesite.create_app(env)
 
 
 if __name__ == '__main__':
