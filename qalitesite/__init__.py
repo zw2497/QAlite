@@ -72,7 +72,7 @@ def create_app(test_config=None):
             """
             check if the user is exist
             """
-            p = "SELECT name FROM users WHERE email = %s"
+            p = "SELECT e FROM users WHERE email = %s"
             result = db.execute(p,(email)).fetchone()
 
             if result is not None:
@@ -111,7 +111,7 @@ def create_app(test_config=None):
             if password == result['password']:
                 try:
                     payload = {
-                        'user_id': result['u_id'],
+                        'u_id': result['u_id'],
                         'email': result['email']
                     }
 
@@ -130,21 +130,91 @@ def create_app(test_config=None):
             return jsonify(body="Email or password is incorrect", code=0)
 
 
-
-
-
-
-
-    @app.route('/course')
+    @app.route('/class')
     def course():
-        result = g.conn.execute("select * from users").fetchall()
-        p = {}
-        for i, j in enumerate(result):
-            p[i] = j['email']
-        return jsonify(body=p)
+        # token = request.headers.get('credentials')
+        # try:
+        #     payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
+        # except:
+        #     return jsonify(status=401, msg="invalid access", code=0)
+        # else:
+        #     u_id = payload["u_id"]
+        #     email = payload["email"]
+        db = g.conn
 
-    @app.route('/user')
-    def user():
-        return jsonify(body='user!')
+        u_id = 3
+        p = "SELECT o.o_id, o.name as o_name, o.create_time, u.name as creator  " \
+            "FROM enroll e INNER JOIN organizations_create o " \
+            "ON e.org_id = o.o_id " \
+            "INNER JOIN users u ON o.creator_id = u.u_id " \
+            "where e.user_id = %s;"
+        res= {}
+        result = db.execute(p, (u_id)).fetchall()
+        for i, j in enumerate(result):
+            res[i] = {}
+            res[i]['o_name'] = j['o_name']
+            res[i]['create_time'] = j['create_time']
+            res[i]['creator'] = j['creator']
+        return jsonify(course=res)
+
+    @app.route('/question/content')
+    def question():
+        db = g.conn
+        o_id = request.args.get('o_id')
+        """
+        attr from request
+        """
+
+
+        p = "SELECT * FROM question_belong_ask WHERE org_id = %s ORDER BY create_time DESC;"
+        res = {}
+        result = db.execute(p, (o_id)).fetchall()
+        for i, j in enumerate(result):
+            res[i] = {}
+            res[i]['q_id'] = j['q_id']
+            res[i]['creator_id'] = j['creator_id']
+            res[i]['create_time'] = j['create_time']
+            res[i]['solved_type'] = j['solved_type']
+            res[i]['public_type'] = j['public_type']
+            res[i]['views'] = j['views']
+            res[i]['title'] = j['title']
+            res[i]['content'] = j['content']
+            res[i]['update_time'] = j['update_time']
+            res[i]['pin'] = j['pin']
+            res[i]['tag_id'] = j['tag_id']
+            res[i]['q_type'] = j['q_type']
+        return jsonify(question=res)
+
+    @app.route('/comment/content')
+    def comment():
+        db = g.conn
+        """
+        attr from request
+        # """
+        # o_id = request.args.get('o_id')
+        # q_id = request.args.get('q_id')
+        o_id = 1
+        q_id = 4
+
+        p = "select cs.c_id as cs_id, ct.c_id as ct_id, cs.content as cs_content, ct.content as ct_content " \
+            "from comments cs  " \
+            "left outer join reply r " \
+            "on cs.c_id = r.target " \
+            "left outer join comments ct " \
+            "on r.source = ct.c_id " \
+            "where cs.org_id = %s and cs.q_id = %s"
+
+        res = {}
+        result = db.execute(p, (o_id, q_id)).fetchall()
+        res = [dict(r) for r in result]
+
+        return jsonify(comment=res)
+
+    @app.route('/hello')
+    def hello():
+        return "hello world"
 
     return app
+
+
+
