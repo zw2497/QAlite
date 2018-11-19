@@ -2,12 +2,14 @@ import os
 import jwt
 from flask import Flask,g,request
 from flask import jsonify
+from flask_cors import CORS
 
 
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    CORS(app)
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -72,7 +74,7 @@ def create_app(test_config=None):
             """
             check if the user is exist
             """
-            p = "SELECT e FROM users WHERE email = %s"
+            p = "SELECT * FROM users WHERE email = %s"
             result = db.execute(p,(email)).fetchone()
 
             if result is not None:
@@ -86,7 +88,7 @@ def create_app(test_config=None):
                 p = "INSERT INTO users (email, password, name) VALUES (%s, %s, %s)"
                 result = db.execute(p, (email, password, name))
 
-            return jsonify(body="success login", code=1)
+            return jsonify(body="success Register", code=1)
 
     @app.route('/login', methods=['POST', 'GET'])
     def login():
@@ -107,6 +109,12 @@ def create_app(test_config=None):
 
             p = "SELECT * FROM users WHERE email = %s"
             result = db.execute(p, (email)).fetchone()
+
+            """
+            check no email
+            """
+            if not result:
+                return jsonify(body="Email or password is incorrect", code=0)
 
             if password == result['password']:
                 try:

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Collapsible sidebar using Bootstrap 4</title>
+
+  <!-- Bootstrap CSS CDN -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./stylesheets/style.css">
+
+  <!-- Font Awesome JS -->
+  <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+  <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+
+<div class="wrapper">
+  <!-- Sidebar Holder -->
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <strong style="font-size: xx-large">QAlite</strong>
+    </div>
+
+    <div class="sidebar-header">
+      <a>COMS W4111 DATABASE</a>
+    </div>
+
+    <div class="list-group">
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 text-truncate" >Practice problems for Functional Dependencies</h6>
+        </div>
+        <p class="mb-1" style="text-overflow: ellipsis; overflow:hidden; max-height: 60px">We have created a webpage with 100 randomly generated functional dependency problems for you to practice with.  The page is linked from the class website.  It is here:
+
+          https://w4111.github.io/fd.html
+
+          Have fun playing with them!
+          #pin</p>
+        <small class = "badge badge-primary">Note</small>
+      </a>
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 text-truncate" >Communication Policy</h6>
+        </div>
+        <p class="mb-1" style="text-overflow: ellipsis; overflow:hidden; max-height: 60px">I remind students that, as mentioned in the course website and by prof. Wu during the first lecture, questions should be posted on Piazza. This way, you'll get a faster reply than sending e-mails to the staff, as all of us are constantly checking Piazza.
+
+          Note that, if you are including partial answers and/or implementation details in your question, you must create a private post rather than a public one.
+
+          Lastly, if you'd like to contact me (Felipe) by e-mail (assuming you have a really good reason to not use Piazza instead), please use the e-mail provided in the course website. There is another "Felipe Rocha" at Columbia who has been accidentally getting  spammed by students.
+
+          Thanks :)
+
+          - Felipe</p>
+        <small class = "badge badge-primary" >Note</small>
+      </a>
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 text-truncate" >Practice problems for Functional Dependencies</h6>
+        </div>
+        <p class="mb-1" style="text-overflow: ellipsis; overflow:hidden; max-height: 60px">We have created a webpage with 100 randomly generated functional dependency problems for you to practice with.  The page is linked from the class website.  It is here:
+
+          https://w4111.github.io/fd.html
+
+          Have fun playing with them!
+          #pin</p>
+        <small class = "badge badge-danger">Question</small>
+      </a>
+
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 text-truncate" >HW4 Can't Copy to Instabase?</h6>
+        </div>
+        <p class="mb-1" style="text-overflow: ellipsis; overflow:hidden; max-height: 60px">It seems there isn't a "copy" option available for HW4. Am I overlooking some other way to fork it?
+
+          Thanks!</p>
+        <small class = "badge badge-success" >Question</small>
+      </a>
+
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h6 class="mb-1 text-truncate" >cost of inserting in sorted heap file</h6>
+        </div>
+        <p class="mb-1" style="text-overflow: ellipsis; overflow:hidden; max-height: 60px">I am confused why the cost of inserting in sorted heap file is search+BD. I thought that we just need to write the page that we want to insert after searching and the cost is search+D. </p>
+        <small class = "badge badge-success" >Question</small>
+      </a>
+
+    </div>
+  </nav>
+
+  <!-- Page Content Holder -->
+  <div id="content">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+
+        <button type="button" id="sidebarCollapse" class="navbar-btn">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <button class="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <i class="fas fa-align-justify"></i>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="nav navbar-nav ml-auto" >
+            <li class="nav-item">
+              <a class="nav-link" href="#">Log Out</a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </nav>
+
+    <h2>Practice problems for Functional Dependencies</h2>
+    <a>We have created a webpage with 100 randomly generated functional dependency problems for you to practice with.
+      The page is linked from the class website.  It is here:</a>
+    <a>https://w4111.github.io/fd.html
+
+      Have fun playing with them!
+      #pin</a>
+
+    <div class="line"></div>
+
+    <h2>Comments</h2>
+    <a>Start a new followup discussion</a>
+    <input type="text" class="form-control" placeholder="Compose a new followup discussion">
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+
+<!-- Load our React component. -->
+<script src="src/controller.js"></script>
+
+<!-- jQuery CDN - Slim version (=without AJAX) -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<!-- Popper.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#sidebarCollapse').on('click', function () {
+            $('#sidebar').toggleClass('active');
+            $(this).toggleClass('active');
+        });
+    });
+</script>
+</body>
+
+</html>
