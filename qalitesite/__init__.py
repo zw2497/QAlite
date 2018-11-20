@@ -78,7 +78,7 @@ def create_app(test_config=None):
             result = db.execute(p,(email)).fetchone()
 
             if result is not None:
-                error = 'User: {} is already registered.'.format(email)
+                error = 'User: {} has already been registered.'.format(email)
                 return jsonify(body=error, code=0)
 
             """
@@ -88,7 +88,7 @@ def create_app(test_config=None):
                 p = "INSERT INTO users (email, password, name) VALUES (%s, %s, %s)"
                 result = db.execute(p, (email, password, name))
 
-            return jsonify(body="success Register", code=1)
+            return jsonify(body="Register success", code=1)
 
     @app.route('/login', methods=['POST', 'GET'])
     def login():
@@ -140,17 +140,15 @@ def create_app(test_config=None):
 
     @app.route('/class')
     def course():
-        # token = request.headers.get('credentials')
-        # try:
-        #     payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
-        # except:
-        #     return jsonify(status=401, msg="invalid access", code=0)
-        # else:
-        #     u_id = payload["u_id"]
-        #     email = payload["email"]
+        token = request.headers.get('Authorization')[2:-1].encode()
+        try:
+            payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
+        except:
+            return jsonify(status=401, msg="invalid access", code=0)
+
+        u_id = payload["u_id"]
         db = g.conn
 
-        u_id = 3
         p = "SELECT o.o_id, o.name as o_name, o.create_time, u.name as creator  " \
             "FROM enroll e INNER JOIN organizations_create o " \
             "ON e.org_id = o.o_id " \
@@ -158,12 +156,11 @@ def create_app(test_config=None):
             "where e.user_id = %s;"
         res= {}
         result = db.execute(p, (u_id)).fetchall()
-        for i, j in enumerate(result):
-            res[i] = {}
-            res[i]['o_name'] = j['o_name']
-            res[i]['create_time'] = j['create_time']
-            res[i]['creator'] = j['creator']
-        return jsonify(course=res)
+        if not result:
+            return jsonify(msg="no class registered",code = 0)
+        res = [dict(r) for r in result]
+
+        return jsonify(classinfo=res, code = 1)
 
     @app.route('/question/content')
     def question():

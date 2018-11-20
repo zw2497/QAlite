@@ -49,6 +49,9 @@ var Login = function (_React$Component) {
             }).then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
+                    var authorization = response.data.token;
+                    console.log(authorization);
+                    window.sessionStorage.setItem("Authorization", authorization);
                     window.location.replace("http://127.0.0.1:3000/class.html");
                 } else {
                     this.setState({ error: "Incorrect username or password" });
@@ -151,7 +154,8 @@ var Register = function (_React$Component2) {
             isChecked: true,
             email: "",
             password: "",
-            name: ""
+            name: "",
+            error: ""
         };
 
         _this2.handleChange = _this2.handleChange.bind(_this2);
@@ -176,7 +180,12 @@ var Register = function (_React$Component2) {
                 password: this.state.password
             }).then(function (response) {
                 console.log(response);
-            }).catch(function (error) {
+                if (response.data.code === 1) {
+                    this.setState({ error: response.data.body });
+                } else {
+                    this.setState({ error: response.data.body });
+                }
+            }.bind(this)).catch(function (error) {
                 console.log(error);
             });
 
@@ -196,6 +205,7 @@ var Register = function (_React$Component2) {
                         { className: 'h3 mb-3 font-weight-normal' },
                         'Register'
                     ),
+                    React.createElement(Errorno, { msg: this.state.error, err: this.state.error !== "", id: 'error' }),
                     React.createElement(
                         'label',
                         { htmlFor: 'registerInputEmail', className: 'sr-only' },

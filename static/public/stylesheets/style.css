@@ -61,8 +61,8 @@ a, a:hover, a:focus {
 
 
 #sidebar {
-  min-width: 250px;
-  max-width: 250px;
+  min-width: 300px;
+  max-width: 300px;
   background: #7386D5;
   color: #fff;
   transition: all 0.6s cubic-bezier(0.945, 0.020, 0.270, 0.665);

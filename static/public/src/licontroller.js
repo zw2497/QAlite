@@ -33,6 +33,9 @@ class Login extends React.Component {
             .then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
+                    let authorization = response.data.token;
+                    console.log(authorization)
+                    window.sessionStorage.setItem("Authorization", authorization);
                     window.location.replace("http://127.0.0.1:3000/class.html");
                 } else{
                     this.setState({error: "Incorrect username or password"});
@@ -107,7 +110,8 @@ class Register extends React.Component {
             isChecked: true,
             email: "",
             password: "",
-            name:""
+            name:"",
+            error:""
         };
 
         this.handleChange = this.handleChange.bind(this);
@@ -131,7 +135,12 @@ class Register extends React.Component {
         })
             .then(function (response) {
                 console.log(response);
-            })
+                if (response.data.code === 1) {
+                    this.setState({error: response.data.body});
+                } else{
+                    this.setState({error: response.data.body});
+                }
+            }.bind(this))
             .catch(function (error) {
                 console.log(error);
             });
@@ -144,6 +153,9 @@ class Register extends React.Component {
             <div className="modal-body text-center">
                 <form className="form-signin">
                     <h1 className="h3 mb-3 font-weight-normal">Register</h1>
+                    {/*error message*/}
+                    <Errorno msg = {this.state.error} err = {this.state.error !== ""} id = "error"/>
+
                     <label htmlFor="registerInputEmail" className ="sr-only">User Name</label>
                     <input type="email" id="registerInputName" name = "name" className = "form-control" placeholder="User name" value={this.state.name} onChange={this.handleChange} required
                            autoFocus />
