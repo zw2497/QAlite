@@ -3,6 +3,7 @@ import jwt
 from flask import Flask,g,request
 from flask import jsonify
 from flask_cors import CORS
+import datetime
 
 
 
@@ -27,10 +28,28 @@ def create_app(test_config=None):
     from . import db
     @app.before_request
     def before_request():
+        """
+        connect db and retreive uid from token
+        :return: g.conn
+        """
         try:
             g.conn = db.conn(db.create())
         except:
             g.conn = None
+
+        if not request.headers.get('Authorization'):
+            g.u_id = None
+        else:
+            token = request.headers.get('Authorization')[2:-1].encode()
+            try:
+                payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
+            except:
+                return jsonify(status=401, msg="invalid access", code=0)
+
+            g.u_id = payload["u_id"]
+
+
+
 
     @app.teardown_request
     def teardown_request(exception):
@@ -140,13 +159,7 @@ def create_app(test_config=None):
 
     @app.route('/class')
     def course():
-        token = request.headers.get('Authorization')[2:-1].encode()
-        try:
-            payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
-        except:
-            return jsonify(status=401, msg="invalid access", code=0)
-
-        u_id = payload["u_id"]
+        u_id = g.u_id
         db = g.conn
 
         p = "SELECT o.o_id, o.name as o_name, o.create_time, u.name as creator  " \
@@ -214,6 +227,30 @@ def create_app(test_config=None):
         res = [dict(r) for r in result]
 
         return jsonify(comment=res)
+
+    @app.route('/newpost', methods=['POST', 'GET'])
+    def newpost():
+        if request.method == 'POST':
+            db = g.conn
+            u_id = g.u_id
+
+            o_id = request.json['o_id']
+            title = request.json['title']
+            content = request.json['content']
+            solve = 'resolved' if request.json['q_type'] == '0' else 'unresolved'
+            p_type = 'public' if request.json['p_type'] == '0' else 'private'
+            q_type = 'note' if request.json['q_type'] == '0' else 'question'
+
+            p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
+            result = db.execute(p, (u_id, o_id)).fetchall()
+            if not result:
+                return jsonify(msg="user dose not enroll in this class", code=0)
+
+            p = "INSERT INTO question_belong_ask (creator_id, org_id, create_time,update_time , solved_type, public_type, title, content, tag_id, q_type) VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %s, %s, %s,%s, %s, %s)"
+            result = db.execute(p, (u_id, o_id, solve , p_type, title, content,1,q_type))
+
+            return jsonify(classinfo=str(result), code = 1)
+
 
     @app.route('/hello')
     def hello():

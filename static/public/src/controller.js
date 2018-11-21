@@ -1,14 +1,18 @@
 axios.defaults.baseURL = 'http://127.0.0.1:5000';
-// axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 class Newpost extends React.Component {
     constructor(props) {
         super(props);
+        this.handlenewpost = this.handlenewpost.bind(this)
+    }
+
+    handlenewpost (oid) {
+
     }
 
     render() {
-        return <button className="btn btn-primary btn-block ">New Post</button>
+        return <button className="btn btn-primary btn-block" data-toggle="modal" data-target="#postModal">New Post</button>
     }
 }
 
@@ -123,10 +127,104 @@ class Question extends React.Component {
 }
 
 
+class Post extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            isNote: false,
+            isPrivate: false,
+            title: "",
+            content: "",
+            error:""
+        };
+
+
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    handleChange(event) {
+        const target =  event.target;
+        const value = target.type === 'checkbox' ? target.checked : target.value;
+        const name = target.name;
+        this.setState({
+            [name]: value,
+        });
+    }
+
+    handleSubmit(event) {
+        let claim = window.sessionStorage.getItem("Authorization");
+        if (!claim) {
+            window.location.replace("http://127.0.0.1:3000");
+            console.log("redirect")
+        }
+
+
+        axios.post('/newpost',{
+            title: this.state.title,
+            content: this.state.content,
+            q_type: this.state.isNote? '0' : '1',
+            p_type: this.state.isPrivate? '0' : '1',
+            o_id: '1'
+        },{headers: {'Authorization': claim, 'Content-Type': 'application/json'}
+        })
+        .then(function (response) {
+            console.log(response);
+            if (response.data.code === 1) {
+                this.setState({error: "Post success"});
+            } else{
+                this.setState({error: "Post failed"});
+            }
+        }.bind(this))
+        .catch(function (error) {
+            console.log(error);
+        });
+
+        event.preventDefault();
+    }
+
+    render() {
+        return (
+            <div className="modal-body text-center">
+                <form className="form-signin">
+                    <h1 className="h3 mb-3 font-weight-normal">New Post</h1>
+
+                    <div className="input-group mb-3">
+                        <input type="text" name = "title" value={this.state.title} onChange={this.handleChange} className="form-control" placeholder="Title" aria-label="Title" aria-describedby="basic-addon1" />
+                    </div>
+
+                    <div className="input-group">
+                        <textarea className="form-control" name = "content" value={this.state.content} onChange={this.handleChange} placeholder="Content"  aria-label="With textarea" style={{'minHeight': '250px'}} ></textarea>
+                    </div>
+
+                    <div className="checkbox mb-3">
+                        <label>
+                            <input type="checkbox" name = "isNote" value={this.state.isNote} checked={this.state.isNote} onChange={this.handleChange} /> Is a note?
+                        </label>
+                        <label>
+                            <input type="checkbox" name = "isPrivate" value={this.state.isPrivate} checked={this.state.isPrivate} onChange={this.handleChange} /> Is private?
+                        </label>
+                    </div>
+                </form>
+
+                <div className="modal-footer">
+                    <button className="btn btn-lg btn-primary" type="submit" onClick={this.handleSubmit}>Post</button>
+                    <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+
+
+        );
+    }
+}
+
+
+
+
 ReactDOM.render(<Newpost />, document.getElementById('newpost'));
 ReactDOM.render(<Class />, document.getElementById('class'));
 ReactDOM.render(<Logout />, document.getElementById('logout'));
-ReactDOM.render(
-    <Question />,
-    document.getElementById('question')
-);
+ReactDOM.render(<Question />, document.getElementById('question'));
+ReactDOM.render(<Post />, document.getElementById('post'));
+
