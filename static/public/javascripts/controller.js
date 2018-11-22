@@ -191,9 +191,27 @@ var Question = function (_React$Component5) {
         key: 'render',
         value: function render() {
             return React.createElement(
-                'div',
-                null,
-                ' hello world'
+                'a',
+                { href: '#', className: 'list-group-item list-group-item-action flex-column align-items-start' },
+                React.createElement(
+                    'div',
+                    { className: 'd-flex w-100 justify-content-between' },
+                    React.createElement(
+                        'h6',
+                        { className: 'mb-1 text-truncate' },
+                        'Practice problems for Functional Dependencies'
+                    )
+                ),
+                React.createElement(
+                    'p',
+                    { className: 'mb-1', style: 'text-overflow: ellipsis; overflow:hidden; max-height: 60px' },
+                    'We have created a webpage with 100 randomly generated functional dependency problems for you to practice with. The page is linked from the class website. It is here: https://w4111.github.io/fd.html Have fun playing with them! #pin'
+                ),
+                React.createElement(
+                    'small',
+                    { className: 'badge badge-primary' },
+                    'Note'
+                )
             );
         }
     }]);

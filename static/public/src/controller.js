@@ -16,7 +16,6 @@ class Newpost extends React.Component {
     }
 }
 
-
 class Classlist extends React.Component{
     constructor(props) {
         super(props);
@@ -32,7 +31,6 @@ class Classlist extends React.Component{
 
 
 }
-
 
 class Class extends React.Component {
     constructor(props) {
@@ -93,7 +91,6 @@ class Class extends React.Component {
     }
 }
 
-
 class Logout extends React.Component {
     constructor(props) {
         super(props);
@@ -110,22 +107,31 @@ class Logout extends React.Component {
     }
 }
 
-
-
 class Question extends React.Component {
     constructor(props) {
         super(props);
-
     }
 
     render() {
         return (
-            <div> hello world</div>
+            <a href="#" className="list-group-item list-group-item-action flex-column align-items-start">
+                <div className="d-flex w-100 justify-content-between">
+                    <h6 className="mb-1 text-truncate">Practice problems for Functional Dependencies</h6>
+                </div>
+                <p className="mb-1" style="text-overflow: ellipsis; overflow:hidden; max-height: 60px">We have created a
+                    webpage with 100 randomly generated functional dependency problems for you to practice with. The
+                    page is linked from the class website. It is here:
+
+                    https://w4111.github.io/fd.html
+
+                    Have fun playing with them!
+                    #pin</p>
+                <small className="badge badge-primary">Note</small>
+            </a>
         );
     }
 
 }
-
 
 class Post extends React.Component {
     constructor(props) {
@@ -218,9 +224,6 @@ class Post extends React.Component {
         );
     }
 }
-
-
-
 
 ReactDOM.render(<Newpost />, document.getElementById('newpost'));
 ReactDOM.render(<Class />, document.getElementById('class'));
