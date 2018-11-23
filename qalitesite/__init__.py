@@ -178,7 +178,7 @@ def create_app(test_config=None):
     @app.route('/question/content')
     def question():
         db = g.conn
-        o_id = request.args.get('o_id')
+        o_id = request.json['o_id']
         """
         attr from request
         """
