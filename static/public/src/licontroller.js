@@ -1,6 +1,12 @@
+// axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+
+var env = "http://127.0.0.1:3000";
 axios.defaults.baseURL = 'http://127.0.0.1:5000';
-// axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
+
 axios.defaults.headers.post['Content-Type'] = 'application/json';
+
+
 
 class Login extends React.Component {
     constructor(props) {
@@ -33,10 +39,10 @@ class Login extends React.Component {
             .then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
-                    let authorization = response.data.token;
-                    console.log(authorization)
-                    window.sessionStorage.setItem("Authorization", authorization);
-                    window.location.replace("http://127.0.0.1:3000/class.html");
+                    let Credential = response.data.token;
+                    console.log(Credential)
+                    window.sessionStorage.setItem("Credential", Credential);
+                    window.location.replace(env + "/class.html");
                 } else{
                     this.setState({error: "Incorrect username or password"});
                 }

@@ -36,11 +36,12 @@ def create_app(test_config=None):
             g.conn = db.conn(db.create())
         except:
             g.conn = None
+            return jsonify(status=401, msg="db connection failed", code=0)
 
-        if not request.headers.get('Authorization'):
+        if not request.headers.get('Credential'):
             g.u_id = None
         else:
-            token = request.headers.get('Authorization')[2:-1].encode()
+            token = request.headers.get('Credential')[2:-1].encode()
             try:
                 payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
             except:
@@ -170,12 +171,42 @@ def create_app(test_config=None):
         res= {}
         result = db.execute(p, (u_id)).fetchall()
         if not result:
-            return jsonify(msg="no class registered",code = 0)
+            return jsonify(msg=str(request),code=0)
         res = [dict(r) for r in result]
 
         return jsonify(classinfo=res, code = 1)
 
-    @app.route('/question/content')
+    @app.route('/allclass', methods=['POST', 'GET'])
+    def allcourse():
+        db = g.conn
+        search = request.json['search']
+
+        p = "SELECT o.o_id, o.name as o_name, o.create_time " \
+            "FROM organizations_create o " \
+            "WHERE o.name LIKE %s "
+        res= {}
+        result = db.execute(p,('%' + search + '%')).fetchall()
+        if not result:
+            return jsonify(msg=str(request),code=0)
+        res = [dict(r) for r in result]
+
+        return jsonify(classinfo=res, code = 1)
+
+    @app.route('/addclass', methods=['POST', 'GET'])
+    def addcourse():
+        db = g.conn
+        u_id = g.u_id
+        o_id = request.json['o_id']
+
+        p = "insert into enroll (user_id, org_id, type) values (%s,%s,'student')"
+        try:
+            result = db.execute(p,(u_id,o_id))
+        except:
+            return jsonify(msg="add failed",code=0)
+        else:
+            return jsonify(msg="add success", code = 1)
+
+    @app.route('/question', methods=['POST', 'GET'])
     def question():
         db = g.conn
         o_id = request.json['o_id']
@@ -201,32 +232,35 @@ def create_app(test_config=None):
             res[i]['pin'] = j['pin']
             res[i]['tag_id'] = j['tag_id']
             res[i]['q_type'] = j['q_type']
-        return jsonify(question=res)
+        return jsonify(question=res,code = 1)
 
-    @app.route('/comment/content')
+    @app.route('/comment', methods=['POST', 'GET'])
     def comment():
         db = g.conn
         """
         attr from request
         # """
-        # o_id = request.args.get('o_id')
-        # q_id = request.args.get('q_id')
-        o_id = 1
-        q_id = 4
+        o_id = request.json['o_id']
+        q_id = request.json['q_id']
 
-        p = "select cs.c_id as cs_id, ct.c_id as ct_id, cs.content as cs_content, ct.content as ct_content " \
+        p = "select cs.c_id as cs_id, ct.c_id as ct_id, cs.content as cs_content, ct.content as ct_content, " \
+            "us.name as us_name, ut.name as ut_name " \
             "from comments cs  " \
             "left outer join reply r " \
             "on cs.c_id = r.target " \
             "left outer join comments ct " \
             "on r.source = ct.c_id " \
+            "left outer join users us " \
+            "on cs.creator_id = us.u_id " \
+            "left outer join users ut " \
+            "on ct.creator_id = ut.u_id " \
             "where cs.org_id = %s and cs.q_id = %s"
 
         res = {}
         result = db.execute(p, (o_id, q_id)).fetchall()
         res = [dict(r) for r in result]
 
-        return jsonify(comment=res)
+        return jsonify(comments=res,code = 1)
 
     @app.route('/newpost', methods=['POST', 'GET'])
     def newpost():
@@ -251,9 +285,35 @@ def create_app(test_config=None):
 
             return jsonify(classinfo=str(result), code = 1)
 
+    @app.route('/newcomment', methods=['POST', 'GET'])
+    def newcomment():
+        if request.method == 'POST':
+            db = g.conn
+            u_id = g.u_id
+
+            o_id = request.json['o_id']
+            title = request.json['title']
+            content = request.json['content']
+            solve = 'resolved' if request.json['q_type'] == '0' else 'unresolved'
+            p_type = 'public' if request.json['p_type'] == '0' else 'private'
+            q_type = 'note' if request.json['q_type'] == '0' else 'question'
+
+            p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
+            result = db.execute(p, (u_id, o_id)).fetchall()
+            if not result:
+                return jsonify(msg="user dose not enroll in this class", code=0)
+
+            p = "INSERT INTO question_belong_ask (creator_id, org_id, create_time,update_time , solved_type, public_type, title, content, tag_id, q_type) VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %s, %s, %s,%s, %s, %s)"
+            result = db.execute(p, (u_id, o_id, solve , p_type, title, content,1,q_type))
+
+            return jsonify(classinfo=str(result), code = 1)
+
 
     @app.route('/hello')
     def hello():
+        c = 5
+        if (c == 2):
+            c = 3
         return "hello world"
 
     return app

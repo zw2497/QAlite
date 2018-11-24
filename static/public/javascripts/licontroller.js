@@ -8,8 +8,12 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+// axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+
+var env = "http://127.0.0.1:3000";
 axios.defaults.baseURL = 'http://127.0.0.1:5000';
-// axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
+
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 var Login = function (_React$Component) {
@@ -49,10 +53,10 @@ var Login = function (_React$Component) {
             }).then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
-                    var authorization = response.data.token;
-                    console.log(authorization);
-                    window.sessionStorage.setItem("Authorization", authorization);
-                    window.location.replace("http://127.0.0.1:3000/class.html");
+                    var Credential = response.data.token;
+                    console.log(Credential);
+                    window.sessionStorage.setItem("Credential", Credential);
+                    window.location.replace(env + "/class.html");
                 } else {
                     this.setState({ error: "Incorrect username or password" });
                 }

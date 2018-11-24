@@ -1,30 +1,209 @@
+// axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+
 axios.defaults.baseURL = 'http://127.0.0.1:5000';
+var env = "http://127.0.0.1:3000";
+
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
+
+
 class App extends React.Component{
-    // constructor (props) {
-    //     super(props);
-    //     this.state = {
-    //         currentquestionkey: "0",
-    //         currentclasskey:"0"
-    //     }
-    //
-    //
-    // }
-    //
-    //
-    //
-    //
-    //
+    constructor (props) {
+        super(props);
+        this.state = {
+            currentquestionkey: "0",
+            currentclasskey:"0",
+            questions:{"0": {"title": "loading...", "content": "Loading..."}},
+            classes:[{"o_id" : "-1", "o_name" : "Loading..."}],
+            currentoid: "-1",
+            currentqid:"-1",
+            comments: [
+                {
+                    "cs_content": "Loading...",
+                    "cs_id": 0,
+                    "ct_content": "Loading...",
+                    "ct_id": 0,
+                    "us_name": "Loading...",
+                    "ut_name": "Loading..."
+                }]
+
+        };
+
+        // check Credential
+        var claim = window.sessionStorage.getItem("Credential");
+        if (!claim){
+            window.location.replace(env);
+            console.log("redirect")
+        }
+
+        // query question and class
+        axios.get('/class', {
+            headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        })
+            .then(function (response) {
+                console.log(response);
+                if (response.data.code === 1 && response.data.classinfo[0] !== undefined) {
+                    console.log(response);
+                    this.setState({classes: response.data.classinfo});
+                    this.setState({currentoid: this.state.classes[this.state.currentclasskey].o_id});
+
+                    axios.post('/question',{
+                        o_id: this.state.classes[this.state.currentclasskey].o_id
+                    },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                    })
+                        .then(function (response) {
+                            console.log(response);
+                            if (response.data.code === 1) {
+                                this.setState({questions: response.data.question});
+                                this.setState({currentqid: this.state.questions[this.state.currentquestionkey].q_id});
+
+                                axios.post('/comment',{
+                                    o_id: this.state.currentoid,
+                                    q_id: this.state.currentqid
+                                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                                })
+                                    .then(function (response) {
+                                        console.log(response);
+                                        if (response.data.code === 1) {
+                                            this.setState({comments: response.data.comments});
+
+                                        } else{
+                                            this.setState({error: "Post failed"});
+                                        }
+                                    }.bind(this))
+                                    .catch(function (error) {
+                                        console.log(error);
+                                    });
+                            } else{
+                                this.setState({error: "Post failed"});
+                            }
+                        }.bind(this))
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+
+                } else {
+                    this.setState({classes:[{"o_id" : "-1", "o_name" : "No Class"}]})
+                }
+            }.bind(this))
+            .catch(function (error) {
+                console.log(error);
+            });
+
+        this.handlecurrentclass=this.handlecurrentclass.bind(this)
+        this.handlecurrentquestion=this.handlecurrentquestion.bind(this)
+        this.handleLogout=this.handleLogout.bind(this)
+    }
+
+    handleLogout(event) {
+        window.sessionStorage.removeItem('Credential');
+        window.location.reload();
+    }
+
+    handlecurrentclass(key) {
+        this.setState({currentclasskey : key,currentoid : this.state.classes[key].o_id},
+            () => {
+                axios.post('/question',{
+                    o_id: this.state.currentoid
+                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                })
+                    .then(function (response) {
+                        console.log(response);
+                        if (response.data.code === 1 && response.data.question[0] !== undefined) {
+                            this.setState({questions: response.data.question});
+                            this.setState({currentqid: this.state.questions[this.state.currentquestionkey].q_id});
+
+
+                            axios.post('/comment',{
+                                o_id: this.state.currentoid,
+                                q_id: this.state.currentqid
+                            },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                            })
+                                .then(function (response) {
+                                    console.log(response);
+                                    if (response.data.code === 1) {
+                                        this.setState({comments: response.data.comments});
+                                    } else{
+                                        this.setState({error: "Post failed"});
+                                    }
+                                }.bind(this))
+                                .catch(function (error) {
+                                    console.log(error);
+                                });
+
+                        } else{
+                            this.setState({currentquestionkey: "0", error: "Post failed", questions:{"0": {"title": "No Post", "content": "Please add a new post", "q_id": -1}}});
+                        }
+                    }.bind(this))
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            }
+            )
+
+
+
+    }
+
+    handlecurrentquestion(key) {
+        this.setState({comments: [
+                {
+                    "cs_content": "Loading...",
+                    "cs_id": 0,
+                    "ct_content": "Loading...",
+                    "ct_id": 0,
+                    "us_name": "Loading...",
+                    "ut_name": "Loading..."
+                }]});
+        this.setState({currentquestionkey : key, currentqid: this.state.questions[key].q_id, },
+            () => {
+                axios.post('/comment',{
+                    o_id: this.state.currentoid,
+                    q_id: this.state.currentqid
+                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                })
+                    .then(function (response) {
+                        console.log(response);
+                        if (response.data.code === 1) {
+                            this.setState({comments: response.data.comments});
+
+                        } else{
+                            this.setState({error: "Post failed"});
+                        }
+                    }.bind(this))
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            }
+            )
+    }
+
     render() {
-        const currentquestion = this.props.questions["0"];
-        const currentnumber = "0";
-        const currentoname = this.props.classes[currentnumber].o_name;
-        const currentoid = this.props.classes[currentnumber].o_id;
+        const questions = this.state.questions;
+        const classes = this.state.classes;
+        const currentclasskey = this.state.currentclasskey;
+        const currentquestionkey = this.state.currentquestionkey;
+        const currentquestion = questions[currentquestionkey];
+        const currentoname = classes[currentclasskey].o_name;
+        const currentoid = classes[currentclasskey].o_id;
+        const currentqid = currentquestion.q_id;
+
+        var title;
+        var content;
+        if (currentquestion !== undefined)
+            title = currentquestion.title;
+        else
+            title = "No data";
+
+        if (currentquestion !== undefined)
+            content = currentquestion.content;
+        else
+            content = "No data";
 
         return (<div>
 
-                <Newpostmodal oid = {currentoid}/>
+                <Newpostmodal oid = {currentoid} newpost = {this.handlecurrentclass} mykey = {this.state.currentclasskey}/>
 
                 <div className="wrapper">
                     <nav id="sidebar">
@@ -34,7 +213,7 @@ class App extends React.Component{
                         <div className="sidebar-header">
 
                             {/*class selection*/}
-                            <Classlist classes = {this.props.classes} name = {currentoname}/>
+                            <Classlist classes = {classes} name = {currentoname} onclasschange = {this.handlecurrentclass}/>
 
                             <button className="btn btn-primary btn-block" data-toggle="modal" data-target="#postModal"> New Post </button>
 
@@ -42,7 +221,7 @@ class App extends React.Component{
                         <div className="list-group">
 
                             {/*question list*/}
-                            <Questionlist questions = {this.props.questions}/>
+                            <Questionlist questions = {questions} onchange={this.handlecurrentquestion}/>
 
                         </div>
                     </nav>
@@ -62,7 +241,7 @@ class App extends React.Component{
                                     <ul className="nav navbar-nav ml-auto">
                                         <li className="nav-item">
                                             <div className="nav-link" id="logout">
-                                                <a className="nav-link" href="#">Log Out</a>
+                                                <a className="nav-link" href="#" onClick={this.handleLogout}>Log Out</a>
                                             </div>
                                         </li>
                                     </ul>
@@ -70,11 +249,12 @@ class App extends React.Component{
                             </div>
                         </nav>
 
-                        <Questiondetail title = {currentquestion.title} content = {currentquestion.content}/>
+                        <Questiondetail title = {title} content = {content}/>
 
                         <div className="line" />
+                        <h2><span className="btn btn-outline-secondary">Reply</span></h2>
 
-                        {/*<Comment currentoid = {currentoid} currentquestion = {currentquestion}/>*/}
+                        <Comment currentoid = {currentoid} currentqid = {currentqid} comments={this.state.comments}/>
 
                         <input type="text" className="form-control" placeholder="Compose a new followup discussion" />
                     </div>
@@ -86,8 +266,134 @@ class App extends React.Component{
 }
 
 class Newpostmodal extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            isNote: false,
+            isPrivate: false,
+            title: "",
+            content: "",
+            error:"",
+            search:"",
+            classlist:[]
+        };
+
+
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleSearch = this.handleSearch.bind(this);
+    }
+
+    handleChange(event) {
+        const target =  event.target;
+        const value = target.type === 'checkbox' ? target.checked : target.value;
+        const name = target.name;
+        this.setState({
+            [name]: value,
+        });
+    }
+
+    handleSubmit(event) {
+        let claim = window.sessionStorage.getItem("Credential");
+
+        axios.post('/newpost',{
+            title: this.state.title,
+            content: this.state.content,
+            q_type: this.state.isNote? '0' : '1',
+            p_type: this.state.isPrivate? '0' : '1',
+            o_id: this.props.oid
+        },{headers: {'Credential': claim, 'Content-Type': 'application/json'}
+        })
+            .then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({error: "Post success"});
+                    this.props.newpost(this.props.mykey);
+                } else{
+                    this.setState({error: "Post failed"});
+                }
+
+
+
+            }.bind(this))
+            .catch(function (error) {
+                console.log(error);
+            });
+
+        event.preventDefault();
+    }
+
+    handleSearch(event) {
+        axios.post('/allclass',{
+            search: this.state.search
+        },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        })
+            .then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({classlist: response.data.classinfo});
+                } else{
+                    this.setState({error: "search failed"});
+                }
+
+            }.bind(this))
+            .catch(function (error) {
+                console.log(error);
+            });
+
+        event.preventDefault();
+    }
+
+    handleadd(oid) {
+        axios.post('/addclass',{
+            o_id: oid
+        },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        })
+            .then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({error: "add success"});
+                } else{
+                    this.setState({error: "search failed"});
+                }
+
+            }.bind(this))
+            .catch(function (error) {
+                console.log(error);
+            });
+
+        event.preventDefault();
+
+    }
+
+
+
+
     render() {
+        const rows = [];
+        const classes = this.state.classlist;
+        let i = "0";
+
+        classes.forEach(
+            (classi) => {
+                rows.push(
+
+                    <li key = {i}>
+                        <div>
+                            {classi.o_name}
+                            <button className={"btn btn-primary btn-sm"} onClick={() => this.handleadd(classi.o_id)}>ADD</button>
+                        </div>
+
+                    </li>
+
+                );
+                i++;
+            }
+        )
+
         return (
+
+            <div>
             <div className="modal fade" id="postModal" tabIndex={-1} role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
                 <div className="modal-dialog" role="document">
                     <div className="modal-content">
@@ -101,29 +407,68 @@ class Newpostmodal extends React.Component {
                             <form className="form-signin">
                                 <h1 className="h3 mb-3 font-weight-normal">New Post</h1>
 
+                                {/*error message*/}
+                                <Errorno msg = {this.state.error} err = {this.state.error !== ""} id = "error"/>
+
+
                                 <div className="input-group mb-3">
-                                    <input type="text" name = "title" className="form-control" placeholder="Title" aria-label="Title" aria-describedby="basic-addon1" />
+                                    <input value={this.state.title} onChange={this.handleChange} type="text" name = "title" className="form-control" placeholder="Title" aria-label="Title" aria-describedby="basic-addon1" />
                                 </div>
 
                                 <div className="input-group">
-                                    <textarea className="form-control" name = "content" placeholder="Content"  aria-label="With textarea" style={{'minHeight': '250px'}} ></textarea>
+                                    <textarea  value={this.state.content} onChange={this.handleChange} className="form-control" name = "content" placeholder="Content"  aria-label="With textarea" style={{'minHeight': '250px'}} ></textarea>
                                 </div>
 
                                 <div className="checkbox mb-3">
                                     <label>
-                                        <input type="checkbox" name = "isNote" /> Is a note?
+                                        <input value={this.state.isNote} checked={this.state.isNote} onChange={this.handleChange} type="checkbox" name = "isNote" /> Is a note?
                                     </label>
                                     <label>
-                                        <input type="checkbox" name = "isPrivate"/> Is private?
+                                        <input value={this.state.isPrivate} checked={this.state.isPrivate} onChange={this.handleChange} type="checkbox" name = "isPrivate"/> Is private?
                                     </label>
                                 </div>
                             </form>
 
                             <div className="modal-footer">
-                                <button className="btn btn-lg btn-primary" type="submit">Post</button>
+                                <button onClick={this.handleSubmit} className="btn btn-lg btn-primary" type="submit" data-dismiss="modal">Post</button>
                                 <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
                             </div>
 
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <div className="modal fade" id="courseModal" tabIndex={-1} role="dialog" aria-labelledby="courseModalLabel" aria-hidden="true">
+                    <div className="modal-dialog" role="document">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title" id="courseModalLabel">QAlite</h5>
+                                <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </div>
+                            <div className="modal-body text-center">
+
+                                <h1 className="h3 mb-3 font-weight-normal text-center">Course</h1>
+
+                                {/*error message*/}
+                                <Errorno msg = {this.state.error} err = {this.state.error !== ""} id = "error"/>
+
+
+
+                                <form className="form-inline text-center">
+                                    <input value={this.state.search} onChange={this.handleChange} name={"search"} className="form-control"/>
+                                    <button className="btn btn-outline-success" onClick={this.handleSearch}>Search</button>
+                                </form>
+                                <ul>
+                                    {rows}
+                                </ul>
+
+                                <div className="modal-footer">
+                                    <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
+                                </div>
+
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -133,26 +478,40 @@ class Newpostmodal extends React.Component {
     }
 }
 
-
 class Classrow extends React.Component{
+    handleclick = () => {
+        this.props.onclasschange(this.props.mykey)
+    }
     render() {
-        return  <a className="dropdown-item text-truncate" href="#">{this.props.oname}</a>
+        return  <a className="dropdown-item text-truncate" href="#" onClick={this.handleclick}>{this.props.oname}</a>
     }
 }
 
+
 class Classlist extends React.Component {
+
+    handleclasschange = (mykey) => {
+        this.props.onclasschange(mykey);
+    }
+
     render() {
         const rows = [];
         const classes = this.props.classes;
         const name = this.props.name;
+        let i = "0";
 
         classes.forEach(
             (classi) => {
                 rows.push(
-                    <Classrow key = {classi.o_id} oname = {classi.oname}/>
+                    <Classrow key = {i} mykey={i} oname = {classi.o_name} onclasschange = {this.handleclasschange}/>
 
-                    )
+                    );
+                i++;
             }
+        )
+        rows.push(
+            <a key = {"-2"} className="dropdown-item text-truncate" href="#" data-toggle="modal" data-target="#courseModal" >Course Management</a>
+
         )
 
         return<div className="dropright">
@@ -167,26 +526,41 @@ class Classlist extends React.Component {
     }
 }
 
+function Questiontag(props) {
+    const type = props.type
+    if (type === "note") {
+        return (
+            <small className="badge badge-success">{type}</small>
+        )
+    } else {
+        return (
+            <small className="badge badge-primary">{type}</small>
+        )
+    }
+}
+
+
 class Questionrow extends React.Component {
+    handleclick = () => {
+        this.props.onchange(this.props.mykey)
+    }
+
     render() {
         const question = this.props.question;
         const title = question['title'];
         const content = question['content'];
         const type = question['q_type'];
         return (
-            <a href="#" className="list-group-item list-group-item-action flex-column align-items-start">
+            <a onClick={this.handleclick} href="#" className="list-group-item list-group-item-action flex-column align-items-start">
                 <div className="d-flex w-100 justify-content-between">
                     <h6 className="mb-1 text-truncate">{title}</h6>
                 </div>
                 <p className="mb-1" style={{textOverflow: 'ellipsis', overflow: 'hidden', maxHeight: 60}}>{content}</p>
-                <small className="badge badge-primary">{type}</small>
+                <Questiontag type = {type} />
             </a>
         )
     }
 }
-
-
-
 
 class Questionlist extends React.Component {
     render(){
@@ -195,7 +569,7 @@ class Questionlist extends React.Component {
         let i;
         for(i in questions) {
             rows.push(
-                <Questionrow question = {questions[i]}/>
+                <Questionrow key = {i} question = {questions[i]} onchange={this.props.onchange} mykey = {i}/>
             )
         }
 
@@ -216,13 +590,84 @@ class Questiondetail extends React.Component {
         return (
             <div>
                 <h2>{title}</h2>
-                <p>{content}</p>
+                <h5>{content}</h5>
             </div>
 
         );
     }
 }
 
+function Replytag(props) {
+    const utname = props.utname;
+    if (utname !== null)
+        return (
+            <small className="badge badge-primary">Reply to: {utname}</small>
+        )
+    else
+        return (
+            null
+        )
+}
+
+function Commenttag(props) {
+    const usname = props.usname;
+
+    return (
+        <div>
+        <small className="badge badge-secondary">Creator: {usname}</small>
+        </div>
+    )
+}
+
+class Commentrow extends React.Component {
+    render() {
+        const comment = this.props.comment;
+        const us_content = comment.cs_content;
+        const us_name = comment.us_name;
+        const ut_name = comment.ut_name;
+
+        return (
+            <a className="list-group-item list-group-item-action flex-column align-items-start">
+                <Commenttag usname={us_name}/>
+                <Replytag utname={ut_name}/>
+                <div className="d-flex w-100 justify-content-between">
+                    <h6 className="mb-1 text-truncate">{us_content}</h6>
+                </div>
+            </a>
+
+
+        )
+    }
+}
+
+class Comment extends React.Component {
+
+    render() {
+        const rows = [];
+        const comments = this.props.comments;
+        let i;
+        for(i in comments) {
+            rows.push(
+                <Commentrow key = {i} comment = {comments[i]} mykey = {i}/>
+            )
+        }
+        return (
+            <div>
+                {rows}
+            </div>
+        )
+    }
+}
+
+function Errorno(props){
+    if (props.err === true){
+        return <div className="alert alert-danger" role="alert">
+            {props.msg}
+        </div>;
+    }else {
+        return null
+    }
+}
 
 const classes =
     {
@@ -242,7 +687,6 @@ const classes =
         ],
         "code": 1
     }
-
 
 const questions =
     {
@@ -294,5 +738,68 @@ const questions =
 
 
 
-ReactDOM.render(<App classes = {classes.classinfo} questions = {questions.question}/>, document.getElementById('container'));
+const comment =
+    {
+        "code": 1,
+        "comment": [
+            {
+                "cs_content": "Yep, you write the UNI of the student whose answer you'd like to substitute in place of your own.",
+                "cs_id": 3,
+                "ct_content": null,
+                "ct_id": null,
+                "us_name": "Ivy Chen",
+                "ut_name": null
+            },
+            {
+                "cs_content": "Cool, does this substitution apply to one/a few questions we designate or does it automatically apply to all questions? The latter would make less sense of course, just wanted to make sure.",
+                "cs_id": 4,
+                "ct_content": "Yep, you write the UNI of the student whose answer you'd like to substitute in place of your own.",
+                "ct_id": 3,
+                "us_name": "Anonymous",
+                "ut_name": "Ivy Chen"
+            },
+            {
+                "cs_content": "We will specify the one question where this is applicable on the exam.",
+                "cs_id": 5,
+                "ct_content": null,
+                "ct_id": null,
+                "us_name": "Ivy Chen",
+                "ut_name": null
+            },
+            {
+                "cs_content": "Got it, that makes sense. Thanks!",
+                "cs_id": 6,
+                "ct_content": "We will specify the one question where this is applicable on the exam.",
+                "ct_id": 5,
+                "us_name": "Anonymous",
+                "ut_name": "Ivy Chen"
+            },
+            {
+                "cs_content": "So if I write other student's UNI, will his/her answer replace mine or would I be given the credit of the higher one of the credits of  my answer and that student's?",
+                "cs_id": 7,
+                "ct_content": "Cool, does this substitution apply to one/a few questions we designate or does it automatically apply to all questions? The latter would make less sense of course, just wanted to make sure.",
+                "ct_id": 4,
+                "us_name": "danyang xiang",
+                "ut_name": "Anonymous"
+            },
+            {
+                "cs_content": " The higher one",
+                "cs_id": 8,
+                "ct_content": "So if I write other student's UNI, will his/her answer replace mine or would I be given the credit of the higher one of the credits of  my answer and that student's?",
+                "ct_id": 7,
+                "us_name": "Ivy Chen",
+                "ut_name": "danyang xiang"
+            },
+            {
+                "cs_content": " The higher one",
+                "cs_id": 8,
+                "ct_content": "Yep, you write the UNI of the student whose answer you'd like to substitute in place of your own.",
+                "ct_id": 3,
+                "us_name": "Ivy Chen",
+                "ut_name": "Ivy Chen"
+            }
+        ]
+    }
+
+ReactDOM.render(<App/>, document.getElementById('container'));
 
