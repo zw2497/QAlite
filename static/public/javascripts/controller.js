@@ -8,11 +8,11 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-// axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
-axios.defaults.baseURL = 'http://127.0.0.1:5000';
-var env = "http://127.0.0.1:3000";
+// axios.defaults.baseURL = 'http://127.0.0.1:5000';
+// var env = "http://127.0.0.1:3000";
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 var App = function (_React$Component) {
@@ -63,7 +63,7 @@ var App = function (_React$Component) {
                 }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                 }).then(function (response) {
                     console.log(response);
-                    if (response.data.code === 1) {
+                    if (response.data.code === 1 && response.data.question[this.state.currentquestionkey] !== undefined) {
                         this.setState({ questions: response.data.question });
                         this.setState({ currentqid: this.state.questions[this.state.currentquestionkey].q_id });
 
@@ -82,13 +82,27 @@ var App = function (_React$Component) {
                             console.log(error);
                         });
                     } else {
-                        this.setState({ error: "Post failed" });
+                        this.setState({ questions: { "0": { "title": "Please post a question", "content": "" } }, comments: [{
+                                "cs_content": "Start a new followup discussion",
+                                "cs_id": 0,
+                                "ct_content": "",
+                                "ct_id": 0,
+                                "us_name": "",
+                                "ut_name": ""
+                            }] });
                     }
                 }.bind(this)).catch(function (error) {
                     console.log(error);
                 });
             } else {
-                this.setState({ classes: [{ "o_id": "-1", "o_name": "No Class" }] });
+                this.setState({ classes: [{ "o_id": "-1", "o_name": "No Class" }], questions: { "0": { "title": "Please add or create a course", "content": "No data" } }, comments: [{
+                        "cs_content": "No data",
+                        "cs_id": 0,
+                        "ct_content": "No data",
+                        "ct_id": 0,
+                        "us_name": "No data",
+                        "ut_name": "No data"
+                    }] });
             }
         }.bind(_this)).catch(function (error) {
             console.log(error);
@@ -96,7 +110,9 @@ var App = function (_React$Component) {
 
         _this.handlecurrentclass = _this.handlecurrentclass.bind(_this);
         _this.handlecurrentquestion = _this.handlecurrentquestion.bind(_this);
+        _this.handleCreCourse = _this.handleCreCourse.bind(_this);
         _this.handleLogout = _this.handleLogout.bind(_this);
+        _this.handlecurrentquestionnorefresh = _this.handlecurrentquestionnorefresh.bind(_this);
         return _this;
     }
 
@@ -173,6 +189,31 @@ var App = function (_React$Component) {
                 });
             });
         }
+    }, {
+        key: 'handlecurrentquestionnorefresh',
+        value: function handlecurrentquestionnorefresh(key) {
+            var _this4 = this;
+
+            this.setState({ currentquestionkey: key, currentqid: this.state.questions[key].q_id }, function () {
+                axios.post('/comment', {
+                    o_id: _this4.state.currentoid,
+                    q_id: _this4.state.currentqid
+                }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                }).then(function (response) {
+                    console.log(response);
+                    if (response.data.code === 1) {
+                        this.setState({ comments: response.data.comments });
+                    } else {
+                        this.setState({ error: "Post failed" });
+                    }
+                }.bind(_this4)).catch(function (error) {
+                    console.log(error);
+                });
+            });
+        }
+    }, {
+        key: 'handleCreCourse',
+        value: function handleCreCourse() {}
     }, {
         key: 'render',
         value: function render() {
@@ -261,6 +302,19 @@ var App = function (_React$Component) {
                                                 { className: 'nav-link', id: 'logout' },
                                                 React.createElement(
                                                     'a',
+                                                    { className: 'nav-link', href: '#', onClick: this.handleCreCourse, 'data-toggle': 'modal', 'data-target': '#createModal' },
+                                                    'Create New Course'
+                                                )
+                                            )
+                                        ),
+                                        React.createElement(
+                                            'li',
+                                            { className: 'nav-item' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'nav-link', id: 'logout' },
+                                                React.createElement(
+                                                    'a',
                                                     { className: 'nav-link', href: '#', onClick: this.handleLogout },
                                                     'Log Out'
                                                 )
@@ -272,7 +326,7 @@ var App = function (_React$Component) {
                         ),
                         React.createElement(Questiondetail, { title: title, content: content }),
                         React.createElement('div', { className: 'line' }),
-                        React.createElement(Comment, { currentoid: currentoid, currentqid: currentqid, comments: this.state.comments, currentquestionkey: this.state.currentquestionkey, refresh: this.handlecurrentquestion })
+                        React.createElement(Comment, { currentoid: currentoid, currentqid: currentqid, comments: this.state.comments, currentquestionkey: this.state.currentquestionkey, refresh: this.handlecurrentquestionnorefresh })
                     )
                 )
             );
@@ -288,22 +342,27 @@ var Newpostmodal = function (_React$Component2) {
     function Newpostmodal(props) {
         _classCallCheck(this, Newpostmodal);
 
-        var _this4 = _possibleConstructorReturn(this, (Newpostmodal.__proto__ || Object.getPrototypeOf(Newpostmodal)).call(this, props));
+        var _this5 = _possibleConstructorReturn(this, (Newpostmodal.__proto__ || Object.getPrototypeOf(Newpostmodal)).call(this, props));
 
-        _this4.state = {
+        _this5.state = {
             isNote: false,
             isPrivate: false,
             title: "",
             content: "",
             error: "",
             search: "",
-            classlist: []
+            classlist: [],
+            courseName: "",
+            description: "",
+            term: "2019,fall"
         };
 
-        _this4.handleChange = _this4.handleChange.bind(_this4);
-        _this4.handleSubmit = _this4.handleSubmit.bind(_this4);
-        _this4.handleSearch = _this4.handleSearch.bind(_this4);
-        return _this4;
+        _this5.handleChange = _this5.handleChange.bind(_this5);
+        _this5.handleSubmit = _this5.handleSubmit.bind(_this5);
+        _this5.handleSearch = _this5.handleSearch.bind(_this5);
+        _this5.handleSelect = _this5.handleSelect.bind(_this5);
+        _this5.handleCreate = _this5.handleCreate.bind(_this5);
+        return _this5;
     }
 
     _createClass(Newpostmodal, [{
@@ -313,6 +372,7 @@ var Newpostmodal = function (_React$Component2) {
             var value = target.type === 'checkbox' ? target.checked : target.value;
             var name = target.name;
             this.setState(_defineProperty({}, name, value));
+            console.log(this.state.term.year);
         }
     }, {
         key: 'handleSubmit',
@@ -379,9 +439,39 @@ var Newpostmodal = function (_React$Component2) {
             event.preventDefault();
         }
     }, {
+        key: 'handleSelect',
+        value: function handleSelect(event) {
+            var name = event.target.name;
+            this.setState(_defineProperty({}, name, event.target.value));
+        }
+    }, {
+        key: 'handleCreate',
+        value: function handleCreate(event) {
+            var term = this.state.term.split(',');
+
+            axios.post('/createcourse', {
+                courseName: this.state.courseName,
+                description: this.state.description,
+                termyear: term[0],
+                termsemester: term[1]
+            }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+            }).then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({ error: "add success" });
+                } else {
+                    this.setState({ error: "search failed" });
+                }
+            }.bind(this)).catch(function (error) {
+                console.log(error);
+            });
+
+            event.preventDefault();
+        }
+    }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this6 = this;
 
             var rows = [];
             var classes = this.state.classlist;
@@ -398,7 +488,7 @@ var Newpostmodal = function (_React$Component2) {
                         React.createElement(
                             'button',
                             { className: "btn btn-primary btn-sm", onClick: function onClick() {
-                                    return _this5.handleadd(classi.o_id);
+                                    return _this6.handleadd(classi.o_id);
                                 } },
                             'ADD'
                         )
@@ -557,6 +647,162 @@ var Newpostmodal = function (_React$Component2) {
                             )
                         )
                     )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'modal fade', id: 'createModal', tabIndex: -1, role: 'dialog', 'aria-labelledby': 'createModalLabel', 'aria-hidden': 'true' },
+                    React.createElement(
+                        'div',
+                        { className: 'modal-dialog', role: 'document' },
+                        React.createElement(
+                            'div',
+                            { className: 'modal-content' },
+                            React.createElement(
+                                'div',
+                                { className: 'modal-header' },
+                                React.createElement(
+                                    'h5',
+                                    { className: 'modal-title', id: 'createModalLabel' },
+                                    'QAlite'
+                                ),
+                                React.createElement(
+                                    'button',
+                                    { type: 'button', className: 'close', 'data-dismiss': 'modal', 'aria-label': 'Close' },
+                                    React.createElement(
+                                        'span',
+                                        { 'aria-hidden': 'true' },
+                                        '\xD7'
+                                    )
+                                )
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'modal-body text-center' },
+                                React.createElement(
+                                    'h1',
+                                    { className: 'h3 mb-3 font-weight-normal text-center' },
+                                    'Course'
+                                ),
+                                React.createElement(Errorno, { msg: this.state.error, err: this.state.error !== "", id: 'error' }),
+                                React.createElement(
+                                    'form',
+                                    { className: 'form-inline text-center' },
+                                    React.createElement(
+                                        'div',
+                                        null,
+                                        React.createElement(
+                                            'div',
+                                            { className: 'input-group mb-3' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'input-group-prepend' },
+                                                React.createElement(
+                                                    'span',
+                                                    { className: 'input-group-text',
+                                                        id: 'inputGroup-sizing-default' },
+                                                    'Name'
+                                                )
+                                            ),
+                                            React.createElement('input', { type: 'text', className: 'form-control',
+                                                'aria-label': 'Sizing example input',
+                                                'aria-describedby': 'inputGroup-sizing-default', name: 'courseName', value: this.state.courseName, onChange: this.handleChange })
+                                        ),
+                                        React.createElement(
+                                            'div',
+                                            { className: 'input-group mb-3' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'input-group-prepend' },
+                                                React.createElement(
+                                                    'label',
+                                                    { className: 'input-group-text',
+                                                        htmlFor: 'inputGroupSelect01' },
+                                                    'Term'
+                                                )
+                                            ),
+                                            React.createElement(
+                                                'select',
+                                                { className: 'custom-select', id: 'inputGroupSelect01', name: 'term', value: this.state.value, onChange: this.handleSelect },
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2019', 'fall'] },
+                                                    '2019 Fall'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2019', 'spring'] },
+                                                    '2019 Spring'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2018', 'fall'] },
+                                                    '2018 Fall'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2018', 'spring'] },
+                                                    '2018 Spring'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2017', 'fall'] },
+                                                    '2017 Fall'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2017', 'spring'] },
+                                                    '2017 Spring'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2016', 'fall'] },
+                                                    '2016 Fall'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2016', 'spring'] },
+                                                    '2016 Spring'
+                                                ),
+                                                React.createElement(
+                                                    'option',
+                                                    { value: ['2015', 'fall'] },
+                                                    '2015 Fall'
+                                                )
+                                            )
+                                        ),
+                                        React.createElement(
+                                            'div',
+                                            { className: 'input-group' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'input-group-prepend' },
+                                                React.createElement(
+                                                    'span',
+                                                    { className: 'input-group-text' },
+                                                    'Description'
+                                                )
+                                            ),
+                                            React.createElement('textarea', { value: this.state.description, onChange: this.handleChange, name: 'description', className: 'form-control', 'aria-label': 'With textarea' })
+                                        )
+                                    )
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'modal-footer' },
+                                    React.createElement(
+                                        'button',
+                                        { type: 'button ', className: 'btn btn-secondary btn-lg', 'data-dismiss': 'modal', onClick: this.handleCreate },
+                                        'Add'
+                                    ),
+                                    React.createElement(
+                                        'button',
+                                        { type: 'button ', className: 'btn btn-secondary btn-lg', 'data-dismiss': 'modal' },
+                                        'Close'
+                                    )
+                                )
+                            )
+                        )
+                    )
                 )
             );
         }
@@ -571,7 +817,7 @@ var Classrow = function (_React$Component3) {
     function Classrow() {
         var _ref;
 
-        var _temp, _this6, _ret;
+        var _temp, _this7, _ret;
 
         _classCallCheck(this, Classrow);
 
@@ -579,9 +825,9 @@ var Classrow = function (_React$Component3) {
             args[_key] = arguments[_key];
         }
 
-        return _ret = (_temp = (_this6 = _possibleConstructorReturn(this, (_ref = Classrow.__proto__ || Object.getPrototypeOf(Classrow)).call.apply(_ref, [this].concat(args))), _this6), _this6.handleclick = function () {
-            _this6.props.onclasschange(_this6.props.mykey);
-        }, _temp), _possibleConstructorReturn(_this6, _ret);
+        return _ret = (_temp = (_this7 = _possibleConstructorReturn(this, (_ref = Classrow.__proto__ || Object.getPrototypeOf(Classrow)).call.apply(_ref, [this].concat(args))), _this7), _this7.handleclick = function () {
+            _this7.props.onclasschange(_this7.props.mykey);
+        }, _temp), _possibleConstructorReturn(_this7, _ret);
     }
 
     _createClass(Classrow, [{
@@ -604,7 +850,7 @@ var Classlist = function (_React$Component4) {
     function Classlist() {
         var _ref2;
 
-        var _temp2, _this7, _ret2;
+        var _temp2, _this8, _ret2;
 
         _classCallCheck(this, Classlist);
 
@@ -612,15 +858,15 @@ var Classlist = function (_React$Component4) {
             args[_key2] = arguments[_key2];
         }
 
-        return _ret2 = (_temp2 = (_this7 = _possibleConstructorReturn(this, (_ref2 = Classlist.__proto__ || Object.getPrototypeOf(Classlist)).call.apply(_ref2, [this].concat(args))), _this7), _this7.handleclasschange = function (mykey) {
-            _this7.props.onclasschange(mykey);
-        }, _temp2), _possibleConstructorReturn(_this7, _ret2);
+        return _ret2 = (_temp2 = (_this8 = _possibleConstructorReturn(this, (_ref2 = Classlist.__proto__ || Object.getPrototypeOf(Classlist)).call.apply(_ref2, [this].concat(args))), _this8), _this8.handleclasschange = function (mykey) {
+            _this8.props.onclasschange(mykey);
+        }, _temp2), _possibleConstructorReturn(_this8, _ret2);
     }
 
     _createClass(Classlist, [{
         key: 'render',
         value: function render() {
-            var _this8 = this;
+            var _this9 = this;
 
             var rows = [];
             var classes = this.props.classes;
@@ -628,7 +874,7 @@ var Classlist = function (_React$Component4) {
             var i = "0";
 
             classes.forEach(function (classi) {
-                rows.push(React.createElement(Classrow, { key: i, mykey: i, oname: classi.o_name, onclasschange: _this8.handleclasschange }));
+                rows.push(React.createElement(Classrow, { key: i, mykey: i, oname: classi.o_name, onclasschange: _this9.handleclasschange }));
                 i++;
             });
             rows.push(React.createElement(
@@ -681,7 +927,7 @@ var Questionrow = function (_React$Component5) {
     function Questionrow() {
         var _ref3;
 
-        var _temp3, _this9, _ret3;
+        var _temp3, _this10, _ret3;
 
         _classCallCheck(this, Questionrow);
 
@@ -689,9 +935,9 @@ var Questionrow = function (_React$Component5) {
             args[_key3] = arguments[_key3];
         }
 
-        return _ret3 = (_temp3 = (_this9 = _possibleConstructorReturn(this, (_ref3 = Questionrow.__proto__ || Object.getPrototypeOf(Questionrow)).call.apply(_ref3, [this].concat(args))), _this9), _this9.handleclick = function () {
-            _this9.props.onchange(_this9.props.mykey);
-        }, _temp3), _possibleConstructorReturn(_this9, _ret3);
+        return _ret3 = (_temp3 = (_this10 = _possibleConstructorReturn(this, (_ref3 = Questionrow.__proto__ || Object.getPrototypeOf(Questionrow)).call.apply(_ref3, [this].concat(args))), _this10), _this10.handleclick = function () {
+            _this10.props.onchange(_this10.props.mykey);
+        }, _temp3), _possibleConstructorReturn(_this10, _ret3);
     }
 
     _createClass(Questionrow, [{
@@ -828,7 +1074,7 @@ var Commentrow = function (_React$Component8) {
     _createClass(Commentrow, [{
         key: 'render',
         value: function render() {
-            var _this13 = this;
+            var _this14 = this;
 
             var comment = this.props.comment;
             var us_content = comment.cs_content;
@@ -839,7 +1085,7 @@ var Commentrow = function (_React$Component8) {
             return React.createElement(
                 'a',
                 { className: 'list-group-item list-group-item-action flex-column align-items-start', onClick: function onClick() {
-                        return _this13.props.handlereply(c_id, us_name);
+                        return _this14.props.handlereply(c_id, us_name);
                     } },
                 React.createElement(Commenttag, { usname: us_name }),
                 React.createElement(Replytag, { utname: ut_name }),
@@ -865,14 +1111,14 @@ var Comment = function (_React$Component9) {
     function Comment(props) {
         _classCallCheck(this, Comment);
 
-        var _this14 = _possibleConstructorReturn(this, (Comment.__proto__ || Object.getPrototypeOf(Comment)).call(this, props));
+        var _this15 = _possibleConstructorReturn(this, (Comment.__proto__ || Object.getPrototypeOf(Comment)).call(this, props));
 
-        _this14.state = { c_id: "-1", replycontent: "", replyname: "None" };
+        _this15.state = { c_id: "-1", replycontent: "", replyname: "None" };
 
-        _this14.handlereply = _this14.handlereply.bind(_this14);
-        _this14.handleChange = _this14.handleChange.bind(_this14);
-        _this14.handlereplysubmit = _this14.handlereplysubmit.bind(_this14);
-        return _this14;
+        _this15.handlereply = _this15.handlereply.bind(_this15);
+        _this15.handleChange = _this15.handleChange.bind(_this15);
+        _this15.handlereplysubmit = _this15.handlereplysubmit.bind(_this15);
+        return _this15;
     }
 
     _createClass(Comment, [{

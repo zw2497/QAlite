@@ -290,54 +290,68 @@ def create_app(test_config=None):
         if request.method == 'POST':
             db = g.conn
             u_id = g.u_id
-            o_id = request.json['o_id']
-            q_id = request.json['q_id']
-            c_id = request.json['c_id']
-            content = request.json['content']
+            try:
+                o_id = request.json['o_id']
+                q_id = request.json['q_id']
+                c_id = request.json['c_id']
+                content = request.json['content']
+                p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
+                result = db.execute(p, (u_id, o_id)).fetchall()
+                if not result:
+                    return jsonify(msg="user dose not enroll in this class", code=0)
 
-            p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
-            result = db.execute(p, (u_id, o_id)).fetchall()
-            if not result:
-                return jsonify(msg="user dose not enroll in this class", code=0)
-
-            p = "INSERT INTO comments(create_time, creator_id, content, org_id, q_id) VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s)"
-            result = db.execute(p, (u_id, content, o_id, q_id))
-
-
-
-            if (c_id != '-1'):
-                p = "select last_value from comments_c_id_seq"
-                result = db.execute(p).fetchone()
-                s_cid = result['last_value']
-
-                p = "INSERT INTO reply (source, source_qid, target, target_qid) VALUES (%s,%s,%s,%s)"
-                result = db.execute(p, (c_id, q_id, s_cid, q_id))
+                p = "INSERT INTO comments(create_time, creator_id, content, org_id, q_id) VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s)"
+                result = db.execute(p, (u_id, content, o_id, q_id))
 
 
-            return jsonify(msg=str(result), code = 1)
 
-    @app.route('/newcourse', methods=['POST', 'GET'])
-    def newcourse():
+                if (c_id != '-1'):
+                    p = "select last_value from comments_c_id_seq"
+                    result = db.execute(p).fetchone()
+                    s_cid = result['last_value']
+
+                    p = "INSERT INTO reply (source, source_qid, target, target_qid) VALUES (%s,%s,%s,%s)"
+                    result = db.execute(p, (c_id, q_id, s_cid, q_id))
+
+
+                return jsonify(msg=str(result), code = 1)
+            except:
+                return jsonify(msg="Failed", code=0)
+
+    @app.route('/createcourse', methods=['POST', 'GET'])
+    def createcourse():
         if request.method == 'POST':
             db = g.conn
             u_id = g.u_id
+            name = request.json['courseName']
+            description = request.json['description']
+            termyear = request.json['termyear']
+            termsemester = request.json['termsemester']
 
-            o_id = request.json['o_id']
-            title = request.json['title']
-            content = request.json['content']
-            solve = 'resolved' if request.json['q_type'] == '0' else 'unresolved'
-            p_type = 'public' if request.json['p_type'] == '0' else 'private'
-            q_type = 'note' if request.json['q_type'] == '0' else 'question'
+            try:
+                p = "insert into organizations_create(name, create_time, creator_id, type, description) values (%s,CURRENT_TIMESTAMP,%s,'course',%s) "
+                result = db.execute(p, (name,u_id,description))
 
-            p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
-            result = db.execute(p, (u_id, o_id)).fetchall()
-            if not result:
-                return jsonify(msg="user dose not enroll in this class", code=0)
+                p = "select last_value from organizations_create_o_id_seq"
+                result = db.execute(p).fetchone()
+                o_id = result['last_value']
 
-            p = "INSERT INTO question_belong_ask (creator_id, org_id, create_time,update_time , solved_type, public_type, title, content, tag_id, q_type) VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %s, %s, %s,%s, %s, %s)"
-            result = db.execute(p, (u_id, o_id, solve , p_type, title, content,1,q_type))
+                p = "select t_id from terms as t where t.semester = %s and t.year = %s"
+                result = db.execute(p,(termsemester, termyear)).fetchone()
+                t_id = result['t_id']
 
-            return jsonify(classinfo=str(result), code = 1)
+                p = "insert into courses (course_id) values (%s)"
+                result = db.execute(p, (o_id))
+
+                p = "insert into offer (course_id, term_id) values (%s,%s)"
+                result = db.execute(p, (o_id, t_id))
+
+                p = "insert into enroll (user_id, org_id, type) values (%s,%s,'instructor')"
+                result = db.execute(p, (u_id, o_id))
+            except:
+                return jsonify(msg="Failed, unknown reason", code=0)
+            else:
+                return jsonify(msg="Create success", code=1)
 
 
     @app.route('/hello')

@@ -1,8 +1,8 @@
-// axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
-axios.defaults.baseURL = 'http://127.0.0.1:5000';
-var env = "http://127.0.0.1:3000";
+// axios.defaults.baseURL = 'http://127.0.0.1:5000';
+// var env = "http://127.0.0.1:3000";
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 class App extends React.Component{
@@ -51,7 +51,7 @@ class App extends React.Component{
                     })
                         .then(function (response) {
                             console.log(response);
-                            if (response.data.code === 1) {
+                            if (response.data.code === 1 && response.data.question[this.state.currentquestionkey] !== undefined) {
                                 this.setState({questions: response.data.question});
                                 this.setState({currentqid: this.state.questions[this.state.currentquestionkey].q_id});
 
@@ -73,7 +73,15 @@ class App extends React.Component{
                                         console.log(error);
                                     });
                             } else{
-                                this.setState({error: "Post failed"});
+                                this.setState({questions:{"0": {"title": "Please post a question", "content": ""}}, comments: [
+                                        {
+                                            "cs_content": "Start a new followup discussion",
+                                            "cs_id": 0,
+                                            "ct_content": "",
+                                            "ct_id": 0,
+                                            "us_name": "",
+                                            "ut_name": ""
+                                        }]})
                             }
                         }.bind(this))
                         .catch(function (error) {
@@ -81,16 +89,26 @@ class App extends React.Component{
                         });
 
                 } else {
-                    this.setState({classes:[{"o_id" : "-1", "o_name" : "No Class"}]})
+                    this.setState({classes:[{"o_id" : "-1", "o_name" : "No Class"}], questions:{"0": {"title": "Please add or create a course", "content": "No data"}}, comments: [
+                            {
+                                "cs_content": "No data",
+                                "cs_id": 0,
+                                "ct_content": "No data",
+                                "ct_id": 0,
+                                "us_name": "No data",
+                                "ut_name": "No data"
+                            }]})
                 }
             }.bind(this))
             .catch(function (error) {
                 console.log(error);
             });
 
-        this.handlecurrentclass=this.handlecurrentclass.bind(this)
-        this.handlecurrentquestion=this.handlecurrentquestion.bind(this)
-        this.handleLogout=this.handleLogout.bind(this)
+        this.handlecurrentclass=this.handlecurrentclass.bind(this);
+        this.handlecurrentquestion=this.handlecurrentquestion.bind(this);
+        this.handleCreCourse=this.handleCreCourse.bind(this);
+        this.handleLogout=this.handleLogout.bind(this);
+        this.handlecurrentquestionnorefresh=this.handlecurrentquestionnorefresh.bind(this)
     }
 
     handleLogout(event) {
@@ -176,6 +194,34 @@ class App extends React.Component{
             )
     }
 
+    handlecurrentquestionnorefresh(key) {
+        this.setState({currentquestionkey : key, currentqid: this.state.questions[key].q_id, },
+            () => {
+                axios.post('/comment',{
+                    o_id: this.state.currentoid,
+                    q_id: this.state.currentqid
+                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                })
+                    .then(function (response) {
+                        console.log(response);
+                        if (response.data.code === 1) {
+                            this.setState({comments: response.data.comments});
+
+                        } else{
+                            this.setState({error: "Post failed"});
+                        }
+                    }.bind(this))
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            }
+        )
+    }
+
+    handleCreCourse(){
+
+    }
+
     render() {
         const questions = this.state.questions;
         const classes = this.state.classes;
@@ -238,6 +284,11 @@ class App extends React.Component{
                                     <ul className="nav navbar-nav ml-auto">
                                         <li className="nav-item">
                                             <div className="nav-link" id="logout">
+                                                <a className="nav-link" href="#" onClick={this.handleCreCourse} data-toggle="modal" data-target="#createModal">Create New Course</a>
+                                            </div>
+                                        </li>
+                                        <li className="nav-item">
+                                            <div className="nav-link" id="logout">
                                                 <a className="nav-link" href="#" onClick={this.handleLogout}>Log Out</a>
                                             </div>
                                         </li>
@@ -251,7 +302,7 @@ class App extends React.Component{
                         <div className="line" />
 
 
-                        <Comment currentoid = {currentoid} currentqid = {currentqid} comments={this.state.comments} currentquestionkey={this.state.currentquestionkey} refresh={this.handlecurrentquestion}/>
+                        <Comment currentoid = {currentoid} currentqid = {currentqid} comments={this.state.comments} currentquestionkey={this.state.currentquestionkey} refresh={this.handlecurrentquestionnorefresh}/>
                     </div>
                 </div>
             </div>
@@ -270,13 +321,19 @@ class Newpostmodal extends React.Component {
             content: "",
             error:"",
             search:"",
-            classlist:[]
-        };
+            classlist:[],
+            courseName:"",
+            description:"",
+            term:"2019,fall"
+        }
+        ;
 
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleSearch = this.handleSearch.bind(this);
+        this.handleSelect = this.handleSelect.bind(this);
+        this.handleCreate = this.handleCreate.bind(this);
     }
 
     handleChange(event) {
@@ -286,6 +343,7 @@ class Newpostmodal extends React.Component {
         this.setState({
             [name]: value,
         });
+        console.log(this.state.term.year)
     }
 
     handleSubmit(event) {
@@ -296,7 +354,7 @@ class Newpostmodal extends React.Component {
             content: this.state.content,
             q_type: this.state.isNote? '0' : '1',
             p_type: this.state.isPrivate? '0' : '1',
-            o_id: this.props.oid
+            o_id: this.props.oid,
         },{headers: {'Credential': claim, 'Content-Type': 'application/json'}
         })
             .then(function (response) {
@@ -356,6 +414,37 @@ class Newpostmodal extends React.Component {
 
         event.preventDefault();
 
+    }
+
+    handleSelect(event) {
+        const name = event.target.name
+        this.setState({[name]: event.target.value});
+    }
+
+    handleCreate(event) {
+        const term = this.state.term.split(',');
+
+        axios.post('/createcourse',{
+            courseName: this.state.courseName,
+            description: this.state.description,
+            termyear: term[0],
+            termsemester:  term[1]
+        },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        })
+            .then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({error: "add success"});
+                } else{
+                    this.setState({error: "search failed"});
+                }
+
+            }.bind(this))
+            .catch(function (error) {
+                console.log(error);
+            });
+
+        event.preventDefault();
     }
 
     render() {
@@ -454,6 +543,69 @@ class Newpostmodal extends React.Component {
                                 </ul>
 
                                 <div className="modal-footer">
+                                    <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="modal fade" id="createModal" tabIndex={-1} role="dialog" aria-labelledby="createModalLabel" aria-hidden="true">
+                    <div className="modal-dialog" role="document">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title" id="createModalLabel">QAlite</h5>
+                                <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </div>
+                            <div className="modal-body text-center">
+
+                                <h1 className="h3 mb-3 font-weight-normal text-center">Course</h1>
+
+                                {/*error message*/}
+                                <Errorno msg = {this.state.error} err = {this.state.error !== ""} id = "error"/>
+
+                                <form className="form-inline text-center">
+                                    <div>
+                                        <div className="input-group mb-3">
+                                            <div className="input-group-prepend">
+                                                <span className="input-group-text"
+                                                      id="inputGroup-sizing-default">Name</span>
+                                            </div>
+                                            <input type="text" className="form-control"
+                                                   aria-label="Sizing example input"
+                                                   aria-describedby="inputGroup-sizing-default" name="courseName" value={this.state.courseName} onChange={this.handleChange}/>
+                                        </div>
+                                        <div className="input-group mb-3">
+                                            <div className="input-group-prepend">
+                                                <label className="input-group-text"
+                                                       htmlFor="inputGroupSelect01">Term</label>
+                                            </div>
+                                            <select className="custom-select" id="inputGroupSelect01" name='term' value={this.state.value} onChange={this.handleSelect}>
+                                                <option value={['2019','fall']}>2019 Fall</option>
+                                                <option value={['2019','spring']}>2019 Spring</option>
+                                                <option value={['2018','fall']}>2018 Fall</option>
+                                                <option value={['2018','spring']}>2018 Spring</option>
+                                                <option value={['2017','fall']}>2017 Fall</option>
+                                                <option value={['2017','spring']}>2017 Spring</option>
+                                                <option value={['2016','fall']}>2016 Fall</option>
+                                                <option value={['2016','spring']}>2016 Spring</option>
+                                                <option value={['2015','fall']}>2015 Fall</option>
+                                            </select>
+                                        </div>
+                                        <div className="input-group">
+                                            <div className="input-group-prepend">
+                                                <span className="input-group-text">Description</span>
+                                            </div>
+                                            <textarea value={this.state.description} onChange={this.handleChange} name="description" className="form-control" aria-label="With textarea"/>
+                                        </div>
+                                    </div>
+
+                                </form>
+
+                                <div className="modal-footer">
+                                    <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal" onClick={this.handleCreate}>Add</button>
                                     <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
                                 </div>
 

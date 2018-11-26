@@ -1,8 +1,8 @@
-// axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
-var env = "http://127.0.0.1:3000";
-axios.defaults.baseURL = 'http://127.0.0.1:5000';
+// var env = "http://127.0.0.1:3000";
+// axios.defaults.baseURL = 'http://127.0.0.1:5000';
 
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
