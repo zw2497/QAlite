@@ -13,7 +13,6 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 axios.defaults.baseURL = 'http://127.0.0.1:5000';
 var env = "http://127.0.0.1:3000";
-
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 var App = function (_React$Component) {
@@ -273,17 +272,7 @@ var App = function (_React$Component) {
                         ),
                         React.createElement(Questiondetail, { title: title, content: content }),
                         React.createElement('div', { className: 'line' }),
-                        React.createElement(
-                            'h2',
-                            null,
-                            React.createElement(
-                                'span',
-                                { className: 'btn btn-outline-secondary' },
-                                'Reply'
-                            )
-                        ),
-                        React.createElement(Comment, { currentoid: currentoid, currentqid: currentqid, comments: this.state.comments }),
-                        React.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Compose a new followup discussion' })
+                        React.createElement(Comment, { currentoid: currentoid, currentqid: currentqid, comments: this.state.comments, currentquestionkey: this.state.currentquestionkey, refresh: this.handlecurrentquestion })
                     )
                 )
             );
@@ -839,14 +828,19 @@ var Commentrow = function (_React$Component8) {
     _createClass(Commentrow, [{
         key: 'render',
         value: function render() {
+            var _this13 = this;
+
             var comment = this.props.comment;
             var us_content = comment.cs_content;
             var us_name = comment.us_name;
             var ut_name = comment.ut_name;
+            var c_id = comment.cs_id;
 
             return React.createElement(
                 'a',
-                { className: 'list-group-item list-group-item-action flex-column align-items-start' },
+                { className: 'list-group-item list-group-item-action flex-column align-items-start', onClick: function onClick() {
+                        return _this13.props.handlereply(c_id, us_name);
+                    } },
                 React.createElement(Commenttag, { usname: us_name }),
                 React.createElement(Replytag, { utname: ut_name }),
                 React.createElement(
@@ -868,25 +862,83 @@ var Commentrow = function (_React$Component8) {
 var Comment = function (_React$Component9) {
     _inherits(Comment, _React$Component9);
 
-    function Comment() {
+    function Comment(props) {
         _classCallCheck(this, Comment);
 
-        return _possibleConstructorReturn(this, (Comment.__proto__ || Object.getPrototypeOf(Comment)).apply(this, arguments));
+        var _this14 = _possibleConstructorReturn(this, (Comment.__proto__ || Object.getPrototypeOf(Comment)).call(this, props));
+
+        _this14.state = { c_id: "-1", replycontent: "", replyname: "None" };
+
+        _this14.handlereply = _this14.handlereply.bind(_this14);
+        _this14.handleChange = _this14.handleChange.bind(_this14);
+        _this14.handlereplysubmit = _this14.handlereplysubmit.bind(_this14);
+        return _this14;
     }
 
     _createClass(Comment, [{
+        key: 'handlereply',
+        value: function handlereply(c_id, replyname) {
+            this.setState({ c_id: c_id, replyname: replyname });
+        }
+    }, {
+        key: 'handleChange',
+        value: function handleChange(event) {
+            var target = event.target;
+            var name = target.name;
+            var value = target.value;
+            this.setState(_defineProperty({}, name, value));
+        }
+    }, {
+        key: 'handlereplysubmit',
+        value: function handlereplysubmit() {
+            var c_id = this.state.c_id;
+            var replycontent = this.state.replycontent;
+
+            var claim = window.sessionStorage.getItem("Credential");
+
+            axios.post('/newcomment', {
+                c_id: c_id,
+                content: replycontent,
+                q_id: this.props.currentqid,
+                o_id: this.props.currentoid
+            }, { headers: { 'Credential': claim, 'Content-Type': 'application/json' }
+            }).then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({ error: "Post success" });
+                    this.props.refresh(this.props.currentquestionkey);
+                } else {
+                    this.setState({ error: "Post failed" });
+                }
+            }.bind(this)).catch(function (error) {
+                console.log(error);
+            });
+
+            event.preventDefault();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var rows = [];
             var comments = this.props.comments;
             var i = void 0;
             for (i in comments) {
-                rows.push(React.createElement(Commentrow, { key: i, comment: comments[i], mykey: i }));
+                rows.push(React.createElement(Commentrow, { key: i, comment: comments[i], mykey: i, handlereply: this.handlereply }));
             }
             return React.createElement(
                 'div',
                 null,
-                rows
+                rows,
+                React.createElement('input', { type: 'text', className: 'form-control', placeholder: "Reply to:" + this.state.replyname, name: "replycontent", value: this.state.replycontent, onChange: this.handleChange }),
+                React.createElement(
+                    'h2',
+                    null,
+                    React.createElement(
+                        'span',
+                        { className: 'btn btn-outline-secondary', onClick: this.handlereplysubmit },
+                        'Reply'
+                    )
+                )
             );
         }
     }]);

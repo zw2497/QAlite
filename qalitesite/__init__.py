@@ -290,6 +290,37 @@ def create_app(test_config=None):
         if request.method == 'POST':
             db = g.conn
             u_id = g.u_id
+            o_id = request.json['o_id']
+            q_id = request.json['q_id']
+            c_id = request.json['c_id']
+            content = request.json['content']
+
+            p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
+            result = db.execute(p, (u_id, o_id)).fetchall()
+            if not result:
+                return jsonify(msg="user dose not enroll in this class", code=0)
+
+            p = "INSERT INTO comments(create_time, creator_id, content, org_id, q_id) VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s)"
+            result = db.execute(p, (u_id, content, o_id, q_id))
+
+
+
+            if (c_id != '-1'):
+                p = "select last_value from comments_c_id_seq"
+                result = db.execute(p).fetchone()
+                s_cid = result['last_value']
+
+                p = "INSERT INTO reply (source, source_qid, target, target_qid) VALUES (%s,%s,%s,%s)"
+                result = db.execute(p, (c_id, q_id, s_cid, q_id))
+
+
+            return jsonify(msg=str(result), code = 1)
+
+    @app.route('/newcourse', methods=['POST', 'GET'])
+    def newcourse():
+        if request.method == 'POST':
+            db = g.conn
+            u_id = g.u_id
 
             o_id = request.json['o_id']
             title = request.json['title']

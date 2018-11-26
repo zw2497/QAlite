@@ -3,10 +3,7 @@
 
 axios.defaults.baseURL = 'http://127.0.0.1:5000';
 var env = "http://127.0.0.1:3000";
-
 axios.defaults.headers.post['Content-Type'] = 'application/json';
-
-
 
 class App extends React.Component{
     constructor (props) {
@@ -252,11 +249,9 @@ class App extends React.Component{
                         <Questiondetail title = {title} content = {content}/>
 
                         <div className="line" />
-                        <h2><span className="btn btn-outline-secondary">Reply</span></h2>
 
-                        <Comment currentoid = {currentoid} currentqid = {currentqid} comments={this.state.comments}/>
 
-                        <input type="text" className="form-control" placeholder="Compose a new followup discussion" />
+                        <Comment currentoid = {currentoid} currentqid = {currentqid} comments={this.state.comments} currentquestionkey={this.state.currentquestionkey} refresh={this.handlecurrentquestion}/>
                     </div>
                 </div>
             </div>
@@ -312,9 +307,6 @@ class Newpostmodal extends React.Component {
                 } else{
                     this.setState({error: "Post failed"});
                 }
-
-
-
             }.bind(this))
             .catch(function (error) {
                 console.log(error);
@@ -365,9 +357,6 @@ class Newpostmodal extends React.Component {
         event.preventDefault();
 
     }
-
-
-
 
     render() {
         const rows = [];
@@ -487,7 +476,6 @@ class Classrow extends React.Component{
     }
 }
 
-
 class Classlist extends React.Component {
 
     handleclasschange = (mykey) => {
@@ -538,7 +526,6 @@ function Questiontag(props) {
         )
     }
 }
-
 
 class Questionrow extends React.Component {
     handleclick = () => {
@@ -625,9 +612,10 @@ class Commentrow extends React.Component {
         const us_content = comment.cs_content;
         const us_name = comment.us_name;
         const ut_name = comment.ut_name;
+        const c_id = comment.cs_id;
 
         return (
-            <a className="list-group-item list-group-item-action flex-column align-items-start">
+            <a className="list-group-item list-group-item-action flex-column align-items-start" onClick={()=> this.props.handlereply(c_id, us_name)}>
                 <Commenttag usname={us_name}/>
                 <Replytag utname={ut_name}/>
                 <div className="d-flex w-100 justify-content-between">
@@ -641,6 +629,59 @@ class Commentrow extends React.Component {
 }
 
 class Comment extends React.Component {
+    constructor (props) {
+        super(props);
+        this.state = {c_id:"-1", replycontent:"", replyname:"None"};
+
+        this.handlereply=this.handlereply.bind(this);
+        this.handleChange=this.handleChange.bind(this)
+        this.handlereplysubmit=this.handlereplysubmit.bind(this)
+    }
+
+    handlereply(c_id,replyname) {
+        this.setState({c_id:c_id, replyname:replyname})
+    }
+
+    handleChange(event) {
+        const target =  event.target;
+        const name = target.name;
+        const value = target.value;
+        this.setState({
+            [name]: value,
+        });
+    }
+    handlereplysubmit(){
+        const c_id = this.state.c_id;
+        const replycontent = this.state.replycontent;
+
+        let claim = window.sessionStorage.getItem("Credential");
+
+        axios.post('/newcomment',{
+            c_id: c_id,
+            content: replycontent,
+            q_id: this.props.currentqid,
+            o_id: this.props.currentoid
+        },{headers: {'Credential': claim, 'Content-Type': 'application/json'}
+        })
+            .then(function (response) {
+                console.log(response);
+                if (response.data.code === 1) {
+                    this.setState({error: "Post success"});
+                    this.props.refresh(this.props.currentquestionkey);
+                } else{
+                    this.setState({error: "Post failed"});
+                }
+            }.bind(this))
+            .catch(function (error) {
+                console.log(error);
+            });
+
+
+        event.preventDefault();
+
+
+
+    }
 
     render() {
         const rows = [];
@@ -648,12 +689,14 @@ class Comment extends React.Component {
         let i;
         for(i in comments) {
             rows.push(
-                <Commentrow key = {i} comment = {comments[i]} mykey = {i}/>
+                <Commentrow key = {i} comment = {comments[i]} mykey = {i} handlereply={this.handlereply}/>
             )
         }
         return (
             <div>
                 {rows}
+                <input type="text" className="form-control" placeholder={"Reply to:" + this.state.replyname} name={"replycontent"} value={this.state.replycontent} onChange={this.handleChange}/>
+                <h2><span className="btn btn-outline-secondary" onClick={this.handlereplysubmit}>Reply</span></h2>
             </div>
         )
     }
@@ -735,8 +778,6 @@ const questions =
         }
     }
 }
-
-
 
 const comment =
     {
