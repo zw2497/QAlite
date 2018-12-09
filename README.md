@@ -10,64 +10,49 @@ I will not implement the entities such as *Vote, Organizer, Event*. only impleme
 ## 3. SQL schema
 ```
 CREATE TABLE users(
-u_id        SERIAL PRIMARY KEY,
+id        SERIAL PRIMARY KEY,
 email       text NOT NULL,
 password    text NOT NULL,
 name        text NOT NULL
 );
 
-CREATE TYPE o_type AS ENUM ('course', 'event');
-CREATE TABLE organizations_create(
-o_id        SERIAL PRIMARY KEY,
+CREATE TABLE courses(
+id        SERIAL PRIMARY KEY,
 name        text NOT NULL,
-create_time date NOT NULL,
-creator_id  int NOT NULL REFERENCES users (u_id),
-type        o_type NOT NULL,
+create_time timestamp NOT NULL,
+creator_id  int NOT NULL REFERENCES users (id),
 description text
 );
 
 CREATE TYPE enroll_type AS ENUM ('instructor', 'student');
 CREATE TABLE enroll(
-user_id     int REFERENCES users (u_id),
-org_id      int REFERENCES organizations_create(o_id),
+u_id     int REFERENCES users(id),
+c_id      int REFERENCES courses(id),
 type        enroll_type NOT NULL,
-PRIMARY KEY (user_id, org_id)
+PRIMARY KEY (u_id, c_id)
 );
 
 CREATE TABLE terms(
-t_id        SERIAL PRIMARY KEY,
+id        SERIAL PRIMARY KEY,
 semester    text NOT NULL,
 year        int NOT NULL
 );
 
-CREATE TABLE courses(
-course_id   int PRIMARY KEY REFERENCES organizations_create (o_id)
-);
-
 CREATE TABLE offer(
-o_id        SERIAL PRIMARY KEY,
-course_id   int NOT NULL REFERENCES courses (course_id),
-term_id     int NOT NULL REFERENCES terms (t_id),
-UNIQUE (course_id, term_id)
-);
-
-CREATE TABLE events(
-event_id    int PRIMARY KEY REFERENCES organizations_create (o_id)
-);
-
-CREATE TABLE tags(
-t_id        SERIAL PRIMARY KEY,
-content     text NOT NULL
+id        SERIAL PRIMARY KEY,
+c_id   int NOT NULL REFERENCES courses(id),
+t_id     int NOT NULL REFERENCES terms(id),
+UNIQUE (c_id, t_id)
 );
 
 CREATE TYPE resolve_type    AS ENUM ('resolved', 'unresolved');
 CREATE TYPE public_type     AS ENUM ('public', 'private');
 CREATE TYPE pin_type        AS ENUM ('pinned', 'unpinned');
-CREATE TYPE question_type   AS ENUM ('question', 'note');
-CREATE TABLE question_belong_ask(
-q_id        serial,
-creator_id  int NOT NULL REFERENCES users(u_id),
-org_id      int NOT NULL REFERENCES organizations_create(o_id) ON DELETE CASCADE,
+CREATE TYPE post_type   AS ENUM ('question', 'note');
+CREATE TABLE questions(
+id        SERIAL PRIMARY KEY,
+u_id  int NOT NULL REFERENCES users(id),
+c_id      int NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
 create_time timestamp NOT NULL,
 solved_type resolve_type,
 public_type public_type NOT NULL,
@@ -76,20 +61,17 @@ title       text NOT NULL,
 content     text,
 update_time timestamp NOT NULL,
 pin         pin_type NOT NULL DEFAULT 'unpinned',
-tag_id      int NOT NULL REFERENCES tags(t_id),
-q_type      question_type NOT NULL,
-PRIMARY KEY (q_id, org_id)
+type      post_type NOT NULL
 );
 
 CREATE TABLE comments(
-c_id        serial,
-create_time date NOT NULL,
-creator_id  int NOT NULL REFERENCES users (u_id),
+id        SERIAL,
+create_time timestamp NOT NULL,
+creator_id  int NOT NULL REFERENCES users (id),
 content     text NOT NULL,
-org_id      int,
 q_id        int,
-FOREIGN KEY (org_id, q_id) REFERENCES question_belong_ask (org_id, q_id) ON DELETE CASCADE,
-PRIMARY KEY (c_id, q_id)
+FOREIGN KEY (q_id) REFERENCES questions(id) ON DELETE CASCADE,
+PRIMARY KEY (id, q_id)
 );
 
 CREATE TABLE reply( 
@@ -97,28 +79,20 @@ source int,
 source_qid int,
 target int,
 target_qid int,
-FOREIGN KEY (source, source_qid) REFERENCES comments (c_id, q_id),
-FOREIGN KEY (target, target_qid) REFERENCES comments (c_id, q_id),
+FOREIGN KEY (source, source_qid) REFERENCES comments (id, q_id),
+FOREIGN KEY (target, target_qid) REFERENCES comments (id, q_id),
 PRIMARY KEY (source, source_qid, target, target_qid),
 CHECK (source_qid=target_qid)
 );
 
 CREATE TYPE vote_type        AS ENUM ('up', 'down');
 CREATE TABLE vote_question(
-question_id int NOT NULL,
-org_id int NOT NULL,
-FOREIGN KEY (question_id, org_id) REFERENCES question_belong_ask (q_id, org_id),
-user_id int NOT NULL REFERENCES users (u_id),
+q_id int NOT NULL,
+c_id int NOT NULL,
+FOREIGN KEY (q_id) REFERENCES questions (id),
+u_id int NOT NULL REFERENCES users (id),
 vote vote_type NOT NULL,
-PRIMARY KEY (question_id, user_id)
-);
-
-CREATE TABLE vote_comment(
-comment_id int NOT NULL,
-comment_qid int NOT NULL,
-user_id int NOT NULL REFERENCES users(u_id) ,
-Vote vote_type NOT NULL,
-PRIMARY KEY (comment_id, user_id)
+PRIMARY KEY (q_id, u_id)
 );
 ```
 
