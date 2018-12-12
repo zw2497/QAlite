@@ -1,11 +1,34 @@
 import os
 import jwt
-from flask import Flask,g,request
+from flask import Flask,g,request,redirect, json, Response
 from flask import jsonify
 from flask_cors import CORS
-import datetime
+from google.oauth2 import id_token
+from google.auth.transport import requests as requestgoogle
+import boto3
 
-
+def snsemail(email, type="register", course="N/A"):
+    sns = boto3.resource('sns', region_name='us-east-2')
+    topic = sns.Topic('arn:aws:sns:us-east-2:064845973938:ElasticBeanstalkNotifications-Environment-6156-env')
+    response = topic.publish(
+        Message='SNS has been triggered',
+        Subject='new trigger',
+        MessageAttributes={
+            "email": {
+                'DataType': 'String',
+                "StringValue": email
+            },
+            "type": {
+                'DataType': 'String',
+                "StringValue": type
+            },
+            "course": {
+                'DataType': 'String',
+                "StringValue": course
+            }
+        }
+    )
+    return response
 
 def create_app(test_config=None):
     # create and configure the app
@@ -41,7 +64,7 @@ def create_app(test_config=None):
         if not request.headers.get('Credential'):
             g.u_id = None
         else:
-            token = request.headers.get('Credential')[2:-1].encode()
+            token = request.headers.get('Credential').encode()
             try:
                 payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
             except:
@@ -77,7 +100,7 @@ def create_app(test_config=None):
         return jsonify(body=result['name'])
 
 
-    @app.route('/register', methods=['POST', 'GET'])
+    @app.route('/user/register', methods=['POST', 'GET'])
     def register():
         if request.method == 'POST':
             email = request.json['email']
@@ -86,6 +109,9 @@ def create_app(test_config=None):
 
             if (not email or not password):
                 return jsonify(body="Email or password is incorrect", code=0)
+
+            if (" " in email or " " in password or ' ' in name):
+                return jsonify(body="Email or password contain invalid characters", code=0)
 
             db = g.conn
 
@@ -105,12 +131,42 @@ def create_app(test_config=None):
             insert user
             """
             if error is None:
-                p = "INSERT INTO users (email, password, name) VALUES (%s, %s, %s)"
-                result = db.execute(p, (email, password, name))
+                try:
+                    payload = {'password':password}
+                    encodepassword = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode()
+                except Exception as e:
+                    return jsonify(status=401, msg="invalid", code=0)
 
-            return jsonify(body="Register success", code=1)
+                p = "INSERT INTO users (email, password, name, status) VALUES (%s, %s, %s, FALSE)"
 
-    @app.route('/login', methods=['POST', 'GET'])
+                try:
+                    result = db.execute(p, (email, encodepassword, name))
+                except:
+                    return jsonify(status=401, msg="invalid", code=0)
+
+
+            p = "SELECT * FROM users WHERE email = %s"
+            result = db.execute(p, (email)).fetchone()
+
+            snsemail(email)
+
+            try:
+                payload = {
+                    'u_id': result['id'],
+                    'email': result['email']
+                }
+
+                token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode()
+            except Exception as e:
+                return jsonify(status=401, msg="invalid", code=0)
+
+            """
+            login success, return token
+            """
+            return jsonify(token=token, code=1)
+
+
+    @app.route('/user/login', methods=['POST', 'GET'])
     def login():
         if request.method == 'POST':
             email = request.json['email']
@@ -130,27 +186,33 @@ def create_app(test_config=None):
             p = "SELECT * FROM users WHERE email = %s"
             result = db.execute(p, (email)).fetchone()
 
+            try:
+                payload = {'password': password}
+                token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode()
+            except Exception as e:
+                return jsonify(status=401, msg="invalid", code=0)
+
             """
             check no email
             """
             if not result:
                 return jsonify(body="Email or password is incorrect", code=0)
 
-            if password == result['password']:
+            if token == result['password']:
                 try:
                     payload = {
-                        'u_id': result['u_id'],
+                        'u_id': result['id'],
                         'email': result['email']
                     }
 
-                    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+                    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode()
                 except Exception as e:
                     return jsonify(status=401, msg="invalid", code=0)
 
                 """
                 login success, return token
                 """
-                return jsonify(token=str(token), code=1)
+                return jsonify(token=token, code=1)
 
             """
             return error
@@ -163,15 +225,15 @@ def create_app(test_config=None):
         u_id = g.u_id
         db = g.conn
 
-        p = "SELECT o.o_id, o.name as o_name, o.create_time, u.name as creator  " \
-            "FROM enroll e INNER JOIN organizations_create o " \
-            "ON e.org_id = o.o_id " \
-            "INNER JOIN users u ON o.creator_id = u.u_id " \
-            "where e.user_id = %s;"
+        p = "SELECT c.id as o_id, c.name as o_name, c.create_time, u.name as creator  " \
+            "FROM enroll e INNER JOIN courses c " \
+            "ON e.c_id = c.id " \
+            "INNER JOIN users u ON c.creator_id = u.id " \
+            "where e.u_id = %s;"
         res= {}
         result = db.execute(p, (u_id)).fetchall()
         if not result:
-            return jsonify(msg=str(request),code=0)
+            return jsonify(msg="no registered class",code=0)
         res = [dict(r) for r in result]
 
         return jsonify(classinfo=res, code = 1)
@@ -181,9 +243,9 @@ def create_app(test_config=None):
         db = g.conn
         search = request.json['search']
 
-        p = "SELECT o.o_id, o.name as o_name, o.create_time " \
-            "FROM organizations_create o " \
-            "WHERE o.name LIKE %s "
+        p = "SELECT c.id, c.name as o_name, c.create_time " \
+            "FROM courses c " \
+            "WHERE c.name LIKE %s "
         res= {}
         result = db.execute(p,('%' + search + '%')).fetchall()
         if not result:
@@ -198,7 +260,7 @@ def create_app(test_config=None):
         u_id = g.u_id
         o_id = request.json['o_id']
 
-        p = "insert into enroll (user_id, org_id, type) values (%s,%s,'student')"
+        p = "insert into enroll (u_id, c_id, type) values (%s,%s,'student')"
         try:
             result = db.execute(p,(u_id,o_id))
         except:
@@ -215,23 +277,11 @@ def create_app(test_config=None):
         """
 
 
-        p = "SELECT * FROM question_belong_ask WHERE org_id = %s ORDER BY create_time DESC;"
+        p = "SELECT * FROM questions WHERE c_id = %s ORDER BY create_time DESC;"
         res = {}
         result = db.execute(p, (o_id)).fetchall()
-        for i, j in enumerate(result):
-            res[i] = {}
-            res[i]['q_id'] = j['q_id']
-            res[i]['creator_id'] = j['creator_id']
-            res[i]['create_time'] = j['create_time']
-            res[i]['solved_type'] = j['solved_type']
-            res[i]['public_type'] = j['public_type']
-            res[i]['views'] = j['views']
-            res[i]['title'] = j['title']
-            res[i]['content'] = j['content']
-            res[i]['update_time'] = j['update_time']
-            res[i]['pin'] = j['pin']
-            res[i]['tag_id'] = j['tag_id']
-            res[i]['q_type'] = j['q_type']
+        res = [dict(r) for r in result]
+
         return jsonify(question=res,code = 1)
 
     @app.route('/comment', methods=['POST', 'GET'])
@@ -243,21 +293,24 @@ def create_app(test_config=None):
         o_id = request.json['o_id']
         q_id = request.json['q_id']
 
-        p = "select cs.c_id as cs_id, ct.c_id as ct_id, cs.content as cs_content, ct.content as ct_content, " \
+        p = "select cs.id as cs_id, ct.id as ct_id, cs.content as cs_content, ct.content as ct_content, " \
             "us.name as us_name, ut.name as ut_name " \
             "from comments cs  " \
             "left outer join reply r " \
-            "on cs.c_id = r.target " \
+            "on cs.id = r.target " \
             "left outer join comments ct " \
-            "on r.source = ct.c_id " \
+            "on r.source = ct.id " \
             "left outer join users us " \
-            "on cs.creator_id = us.u_id " \
+            "on cs.creator_id = us.id " \
             "left outer join users ut " \
-            "on ct.creator_id = ut.u_id " \
-            "where cs.org_id = %s and cs.q_id = %s"
+            "on ct.creator_id = ut.id " \
+            "left outer join questions q " \
+            "on cs.q_id = q.id " \
+            "where cs.q_id = %s and q.c_id = %s " \
+            "order by cs.create_time "
 
         res = {}
-        result = db.execute(p, (o_id, q_id)).fetchall()
+        result = db.execute(p, (q_id, o_id)).fetchall()
         res = [dict(r) for r in result]
 
         return jsonify(comments=res,code = 1)
@@ -275,13 +328,13 @@ def create_app(test_config=None):
             p_type = 'public' if request.json['p_type'] == '0' else 'private'
             q_type = 'note' if request.json['q_type'] == '0' else 'question'
 
-            p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
+            p = "select * from users as u inner join enroll as e on u.id = e.u_id where u.id = %s and e.c_id = %s;"
             result = db.execute(p, (u_id, o_id)).fetchall()
             if not result:
                 return jsonify(msg="user dose not enroll in this class", code=0)
 
-            p = "INSERT INTO question_belong_ask (creator_id, org_id, create_time,update_time , solved_type, public_type, title, content, tag_id, q_type) VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %s, %s, %s,%s, %s, %s)"
-            result = db.execute(p, (u_id, o_id, solve , p_type, title, content,1,q_type))
+            p = "INSERT INTO questions (u_id, c_id, create_time,update_time , solved_type, public_type, title, content, type) VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, %s, %s, %s,%s,%s)"
+            result = db.execute(p, (u_id, o_id, solve , p_type, title, content,q_type))
 
             return jsonify(classinfo=str(result), code = 1)
 
@@ -293,25 +346,34 @@ def create_app(test_config=None):
             try:
                 o_id = request.json['o_id']
                 q_id = request.json['q_id']
-                c_id = request.json['c_id']
+                t_cid = request.json['t_cid']
                 content = request.json['content']
-                p = "select * from users as u inner join enroll as e on u.u_id = e.user_id where u.u_id = %s and e.org_id = %s;"
+                p = "select * from users as u inner join enroll as e on u.id = e.u_id where u.id = %s and e.c_id = %s;"
                 result = db.execute(p, (u_id, o_id)).fetchall()
                 if not result:
                     return jsonify(msg="user dose not enroll in this class", code=0)
 
-                p = "INSERT INTO comments(create_time, creator_id, content, org_id, q_id) VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s)"
-                result = db.execute(p, (u_id, content, o_id, q_id))
+                p = "INSERT INTO comments(create_time, creator_id, content, q_id) VALUES (CURRENT_TIMESTAMP, %s, %s, %s)"
+                result = db.execute(p, (u_id, content, q_id))
 
 
 
-                if (c_id != '-1'):
-                    p = "select last_value from comments_c_id_seq"
+                if (t_cid != '-1'):
+                    p = "select email from users where id = %s"
+                    result1 = db.execute(p, (u_id)).fetchone()
+
+                    p = "select name from courses where id = %s"
+                    result2 = db.execute(p, (o_id)).fetchone()
+
+                    print(result1['email'], "reply", result2['name']);
+                    snsemail(result1['email'], "reply", result2['name'])
+
+                    p = "select last_value from comments_id_seq"
                     result = db.execute(p).fetchone()
                     s_cid = result['last_value']
 
                     p = "INSERT INTO reply (source, source_qid, target, target_qid) VALUES (%s,%s,%s,%s)"
-                    result = db.execute(p, (c_id, q_id, s_cid, q_id))
+                    result = db.execute(p, (s_cid, q_id, t_cid, q_id))
 
 
                 return jsonify(msg=str(result), code = 1)
@@ -329,29 +391,117 @@ def create_app(test_config=None):
             termsemester = request.json['termsemester']
 
             try:
-                p = "insert into organizations_create(name, create_time, creator_id, type, description) values (%s,CURRENT_TIMESTAMP,%s,'course',%s) "
+                p = "insert into courses(name, create_time, creator_id, description) values (%s,CURRENT_TIMESTAMP,%s,%s) "
                 result = db.execute(p, (name,u_id,description))
 
-                p = "select last_value from organizations_create_o_id_seq"
+                p = "select last_value from courses_id_seq"
                 result = db.execute(p).fetchone()
                 o_id = result['last_value']
 
-                p = "select t_id from terms as t where t.semester = %s and t.year = %s"
+                p = "select id from terms as t where t.semester = %s and t.year = %s"
                 result = db.execute(p,(termsemester, termyear)).fetchone()
-                t_id = result['t_id']
+                t_id = result['id']
 
-                p = "insert into courses (course_id) values (%s)"
-                result = db.execute(p, (o_id))
-
-                p = "insert into offer (course_id, term_id) values (%s,%s)"
+                p = "insert into offer (c_id, t_id) values (%s,%s)"
                 result = db.execute(p, (o_id, t_id))
 
-                p = "insert into enroll (user_id, org_id, type) values (%s,%s,'instructor')"
+                p = "insert into enroll (u_id, c_id, type) values (%s,%s,'instructor')"
                 result = db.execute(p, (u_id, o_id))
             except:
                 return jsonify(msg="Failed, unknown reason", code=0)
             else:
                 return jsonify(msg="Create success", code=1)
+
+    @app.route('/user', methods=['GET'])
+    def user():
+        db = g.conn
+        u_id = g.u_id
+
+        try:
+            p = "select * from users where id = %s"
+            result = db.execute(p, (u_id)).fetchone()
+            return jsonify(name=str(result['name']), status=str(result['status']), code=1)
+        except:
+            return jsonify(status=401, msg="invalid", code=0)
+
+
+
+    @app.route('/user/google', methods=('GET', 'POST'))
+    def google():
+        db = g.conn
+        CLIENT_ID = "1076764154881-jq0lgjdbeje9b5tsucimo3l8p48uen0v.apps.googleusercontent.com"
+        token = request.json['idtoken']
+
+        idinfo = id_token.verify_oauth2_token(token, requestgoogle.Request(), CLIENT_ID)
+
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            return jsonify(status=401, msg="invalid", code=0)
+
+        email = idinfo['email']
+        password = "googlezw2497"
+
+        '''
+        check if it exist this email
+        '''
+        p = "SELECT * FROM users WHERE email = %s"
+        result = db.execute(p,(email)).fetchone()
+
+        if not result:
+            try:
+                payload = {'password':password}
+                encodepassword = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode()
+            except Exception as e:
+                return jsonify(status=401, msg="invalid", code=0)
+
+            p = "INSERT INTO users (email, password, name, status) VALUES (%s, %s, %s, TRUE)"
+
+            try:
+                result = db.execute(p, (email, encodepassword, email))
+            except:
+                return jsonify(status=401, msg="invalid", code=0)
+
+
+        p = "SELECT * FROM users WHERE email = %s"
+        result = db.execute(p, (email)).fetchone()
+
+        try:
+            payload = {
+                'u_id': result['id'],
+                'email': result['email']
+            }
+
+            token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256').decode()
+        except Exception as e:
+            return jsonify(status=401, msg="invalid", code=0)
+
+        """
+        login success, return token
+        """
+        return jsonify(token=token, code=1)
+
+    @app.route('/user/confirm')
+    def confirm_email():
+        db = g.conn
+        token = request.args.get("context")
+        try:
+            payload = jwt.decode(token, 'dev', algorithms='HS256')
+            email = payload['email']
+        except:
+            return jsonify(status=401, msg="invalid", code=0)
+
+        id = db.execute(
+            'SELECT id FROM users WHERE email = %s', (email,)
+        ).fetchone()
+
+        if id is not None:
+            db.execute(
+                'UPDATE users SET status = TRUE WHERE email = %s', (email,)
+            )
+        else:
+            return jsonify(status=401, msg="invalid", code=0)
+
+        return redirect("http://localhost:3000")
+
 
 
     @app.route('/hello')
@@ -362,6 +512,3 @@ def create_app(test_config=None):
         return "hello world"
 
     return app
-
-
-
