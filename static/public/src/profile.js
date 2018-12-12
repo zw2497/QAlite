@@ -1,4 +1,5 @@
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
 // var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
 var env = "http://localhost:3000";
@@ -50,6 +51,8 @@ let googleloginhulper = function(id_token) {
     //     xhr.send('idtoken=' + id_token);
     //
     // }
+
+
     axios.post('/user/google', {
         idtoken: id_token,
     })

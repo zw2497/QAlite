@@ -1,5 +1,13 @@
 qaliteenv/
 
+qalitesite/db.py
+
+application.py
+
+_config.yml
+
+project1part3.pdf
+
 *.pyc
 __pycache__/
 

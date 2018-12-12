@@ -1,14 +1,17 @@
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
+// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
-// axios.defaults.baseURL = 'http://127.0.0.1:5000';
-// var env = "http://127.0.0.1:3000";
+// axios.defaults.baseURL = 'http://localhost:5000';
+var env = "http://localhost:3000";
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 class App extends React.Component{
     constructor (props) {
         super(props);
         this.state = {
+            u_name:"Loading",
+            u_status:"Loading",
             currentquestionkey: "0",
             currentclasskey:"0",
             questions:{"0": {"title": "loading...", "content": "Loading..."}},
@@ -34,6 +37,17 @@ class App extends React.Component{
             console.log("redirect")
         }
 
+        axios.get('/user', {
+            headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        }).then(
+            function (response) {
+                if (response.data.code === 1) {
+                    console.log(response);
+                    this.setState({u_name: response.data.name, u_status: response.data.status});
+                }
+            }.bind(this)
+        )
+
         // query question and class
         axios.get('/class', {
             headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
@@ -53,7 +67,7 @@ class App extends React.Component{
                             console.log(response);
                             if (response.data.code === 1 && response.data.question[this.state.currentquestionkey] !== undefined) {
                                 this.setState({questions: response.data.question});
-                                this.setState({currentqid: this.state.questions[this.state.currentquestionkey].q_id});
+                                this.setState({currentqid: this.state.questions[this.state.currentquestionkey].id});
 
                                 axios.post('/comment',{
                                     o_id: this.state.currentoid,
@@ -127,7 +141,7 @@ class App extends React.Component{
                         console.log(response);
                         if (response.data.code === 1 && response.data.question[0] !== undefined) {
                             this.setState({questions: response.data.question});
-                            this.setState({currentqid: this.state.questions[this.state.currentquestionkey].q_id});
+                            this.setState({currentqid: this.state.questions[this.state.currentquestionkey].id});
 
 
                             axios.post('/comment',{
@@ -148,7 +162,7 @@ class App extends React.Component{
                                 });
 
                         } else{
-                            this.setState({currentquestionkey: "0", error: "Post failed", questions:{"0": {"title": "No Post", "content": "Please add a new post", "q_id": -1}}});
+                            this.setState({currentquestionkey: "0", error: "Post failed", questions:{"0": {"title": "No Post", "content": "Please add a new post", "id": -1}}});
                         }
                     }.bind(this))
                     .catch(function (error) {
@@ -171,7 +185,7 @@ class App extends React.Component{
                     "us_name": "Loading...",
                     "ut_name": "Loading..."
                 }]});
-        this.setState({currentquestionkey : key, currentqid: this.state.questions[key].q_id, },
+        this.setState({currentquestionkey : key, currentqid: this.state.questions[key].id, },
             () => {
                 axios.post('/comment',{
                     o_id: this.state.currentoid,
@@ -195,7 +209,7 @@ class App extends React.Component{
     }
 
     handlecurrentquestionnorefresh(key) {
-        this.setState({currentquestionkey : key, currentqid: this.state.questions[key].q_id, },
+        this.setState({currentquestionkey : key, currentqid: this.state.questions[key].id, },
             () => {
                 axios.post('/comment',{
                     o_id: this.state.currentoid,
@@ -230,7 +244,7 @@ class App extends React.Component{
         const currentquestion = questions[currentquestionkey];
         const currentoname = classes[currentclasskey].o_name;
         const currentoid = classes[currentclasskey].o_id;
-        const currentqid = currentquestion.q_id;
+        const currentqid = currentquestion.id;
 
         var title;
         var content;
@@ -283,8 +297,18 @@ class App extends React.Component{
                                 <div className="collapse navbar-collapse" id="navbarSupportedContent">
                                     <ul className="nav navbar-nav ml-auto">
                                         <li className="nav-item">
-                                            <div className="nav-link" id="logout">
-                                                <a className="nav-link" href="#" onClick={this.handleCreCourse} data-toggle="modal" data-target="#createModal">Create New Course</a>
+                                            <div className="nav-link">
+                                                <a className="nav-link" href={env + '/profile'} >{this.state.u_name}</a>
+                                            </div>
+                                        </li>
+                                        <li className="nav-item">
+                                            <div className="nav-link">
+                                                <Status status={this.state.u_status} />
+                                            </div>
+                                        </li>
+                                        <li className="nav-item">
+                                            <div className="nav-link">
+                                                <a className="nav-link" href="#" onClick={this.handleCreCourse} data-toggle="modal" data-target="#createModal">New Course</a>
                                             </div>
                                         </li>
                                         <li className="nav-item">
@@ -310,6 +334,17 @@ class App extends React.Component{
 
     }
 }
+
+function Status(props) {
+    const status = props.status
+    if (status === "False") {
+        return <button type="button" className="btn btn-danger">Not Verified</button>
+    } else if (status === "True") {
+        return <button type="button" className="btn btn-success">Verified</button>
+    }
+    return null
+}
+
 
 class Newpostmodal extends React.Component {
     constructor(props) {
@@ -403,6 +438,7 @@ class Newpostmodal extends React.Component {
                 console.log(response);
                 if (response.data.code === 1) {
                     this.setState({error: "add success"});
+                    window.location.replace(env + "/class.html");
                 } else{
                     this.setState({error: "search failed"});
                 }
@@ -435,6 +471,7 @@ class Newpostmodal extends React.Component {
                 console.log(response);
                 if (response.data.code === 1) {
                     this.setState({error: "add success"});
+                    window.location.replace(env + "/class.html");
                 } else{
                     this.setState({error: "search failed"});
                 }
@@ -459,7 +496,7 @@ class Newpostmodal extends React.Component {
                     <li key = {i}>
                         <div>
                             {classi.o_name}
-                            <button className={"btn btn-primary btn-sm"} onClick={() => this.handleadd(classi.o_id)}>ADD</button>
+                            <button className={"btn btn-primary btn-sm"} onClick={() => this.handleadd(classi.id)}>ADD</button>
                         </div>
 
                     </li>
@@ -771,7 +808,7 @@ class Commentrow extends React.Component {
                 <Commenttag usname={us_name}/>
                 <Replytag utname={ut_name}/>
                 <div className="d-flex w-100 justify-content-between">
-                    <h6 className="mb-1 text-truncate">{us_content}</h6>
+                    <h6 className="mb-1">{us_content}</h6>
                 </div>
             </a>
 
@@ -809,7 +846,7 @@ class Comment extends React.Component {
         let claim = window.sessionStorage.getItem("Credential");
 
         axios.post('/newcomment',{
-            c_id: c_id,
+            t_cid: c_id,
             content: replycontent,
             q_id: this.props.currentqid,
             o_id: this.props.currentoid
@@ -818,7 +855,7 @@ class Comment extends React.Component {
             .then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
-                    this.setState({error: "Post success"});
+                    this.setState({error: "Post success", replycontent:"", c_id:"-1"});
                     this.props.refresh(this.props.currentquestionkey);
                 } else{
                     this.setState({error: "Post failed"});

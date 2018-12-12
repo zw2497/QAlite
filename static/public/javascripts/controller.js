@@ -9,10 +9,11 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
+// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
-// axios.defaults.baseURL = 'http://127.0.0.1:5000';
-// var env = "http://127.0.0.1:3000";
+// axios.defaults.baseURL = 'http://localhost:5000';
+var env = "http://localhost:3000";
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 var App = function (_React$Component) {
@@ -24,6 +25,8 @@ var App = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
         _this.state = {
+            u_name: "Loading",
+            u_status: "Loading",
             currentquestionkey: "0",
             currentclasskey: "0",
             questions: { "0": { "title": "loading...", "content": "Loading..." } },
@@ -48,6 +51,15 @@ var App = function (_React$Component) {
             console.log("redirect");
         }
 
+        axios.get('/user', {
+            headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+        }).then(function (response) {
+            if (response.data.code === 1) {
+                console.log(response);
+                this.setState({ u_name: response.data.name, u_status: response.data.status });
+            }
+        }.bind(_this));
+
         // query question and class
         axios.get('/class', {
             headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
@@ -65,7 +77,7 @@ var App = function (_React$Component) {
                     console.log(response);
                     if (response.data.code === 1 && response.data.question[this.state.currentquestionkey] !== undefined) {
                         this.setState({ questions: response.data.question });
-                        this.setState({ currentqid: this.state.questions[this.state.currentquestionkey].q_id });
+                        this.setState({ currentqid: this.state.questions[this.state.currentquestionkey].id });
 
                         axios.post('/comment', {
                             o_id: this.state.currentoid,
@@ -135,7 +147,7 @@ var App = function (_React$Component) {
                     console.log(response);
                     if (response.data.code === 1 && response.data.question[0] !== undefined) {
                         this.setState({ questions: response.data.question });
-                        this.setState({ currentqid: this.state.questions[this.state.currentquestionkey].q_id });
+                        this.setState({ currentqid: this.state.questions[this.state.currentquestionkey].id });
 
                         axios.post('/comment', {
                             o_id: this.state.currentoid,
@@ -152,7 +164,7 @@ var App = function (_React$Component) {
                             console.log(error);
                         });
                     } else {
-                        this.setState({ currentquestionkey: "0", error: "Post failed", questions: { "0": { "title": "No Post", "content": "Please add a new post", "q_id": -1 } } });
+                        this.setState({ currentquestionkey: "0", error: "Post failed", questions: { "0": { "title": "No Post", "content": "Please add a new post", "id": -1 } } });
                     }
                 }.bind(_this2)).catch(function (error) {
                     console.log(error);
@@ -172,7 +184,7 @@ var App = function (_React$Component) {
                     "us_name": "Loading...",
                     "ut_name": "Loading..."
                 }] });
-            this.setState({ currentquestionkey: key, currentqid: this.state.questions[key].q_id }, function () {
+            this.setState({ currentquestionkey: key, currentqid: this.state.questions[key].id }, function () {
                 axios.post('/comment', {
                     o_id: _this3.state.currentoid,
                     q_id: _this3.state.currentqid
@@ -194,7 +206,7 @@ var App = function (_React$Component) {
         value: function handlecurrentquestionnorefresh(key) {
             var _this4 = this;
 
-            this.setState({ currentquestionkey: key, currentqid: this.state.questions[key].q_id }, function () {
+            this.setState({ currentquestionkey: key, currentqid: this.state.questions[key].id }, function () {
                 axios.post('/comment', {
                     o_id: _this4.state.currentoid,
                     q_id: _this4.state.currentqid
@@ -224,7 +236,7 @@ var App = function (_React$Component) {
             var currentquestion = questions[currentquestionkey];
             var currentoname = classes[currentclasskey].o_name;
             var currentoid = classes[currentclasskey].o_id;
-            var currentqid = currentquestion.q_id;
+            var currentqid = currentquestion.id;
 
             var title;
             var content;
@@ -299,11 +311,33 @@ var App = function (_React$Component) {
                                             { className: 'nav-item' },
                                             React.createElement(
                                                 'div',
-                                                { className: 'nav-link', id: 'logout' },
+                                                { className: 'nav-link' },
+                                                React.createElement(
+                                                    'a',
+                                                    { className: 'nav-link', href: env + '/profile' },
+                                                    this.state.u_name
+                                                )
+                                            )
+                                        ),
+                                        React.createElement(
+                                            'li',
+                                            { className: 'nav-item' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'nav-link' },
+                                                React.createElement(Status, { status: this.state.u_status })
+                                            )
+                                        ),
+                                        React.createElement(
+                                            'li',
+                                            { className: 'nav-item' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'nav-link' },
                                                 React.createElement(
                                                     'a',
                                                     { className: 'nav-link', href: '#', onClick: this.handleCreCourse, 'data-toggle': 'modal', 'data-target': '#createModal' },
-                                                    'Create New Course'
+                                                    'New Course'
                                                 )
                                             )
                                         ),
@@ -335,6 +369,24 @@ var App = function (_React$Component) {
 
     return App;
 }(React.Component);
+
+function Status(props) {
+    var status = props.status;
+    if (status === "False") {
+        return React.createElement(
+            'button',
+            { type: 'button', className: 'btn btn-danger' },
+            'Not Verified'
+        );
+    } else if (status === "True") {
+        return React.createElement(
+            'button',
+            { type: 'button', className: 'btn btn-success' },
+            'Verified'
+        );
+    }
+    return null;
+}
 
 var Newpostmodal = function (_React$Component2) {
     _inherits(Newpostmodal, _React$Component2);
@@ -429,6 +481,7 @@ var Newpostmodal = function (_React$Component2) {
                 console.log(response);
                 if (response.data.code === 1) {
                     this.setState({ error: "add success" });
+                    window.location.replace(env + "/class.html");
                 } else {
                     this.setState({ error: "search failed" });
                 }
@@ -459,6 +512,7 @@ var Newpostmodal = function (_React$Component2) {
                 console.log(response);
                 if (response.data.code === 1) {
                     this.setState({ error: "add success" });
+                    window.location.replace(env + "/class.html");
                 } else {
                     this.setState({ error: "search failed" });
                 }
@@ -488,7 +542,7 @@ var Newpostmodal = function (_React$Component2) {
                         React.createElement(
                             'button',
                             { className: "btn btn-primary btn-sm", onClick: function onClick() {
-                                    return _this6.handleadd(classi.o_id);
+                                    return _this6.handleadd(classi.id);
                                 } },
                             'ADD'
                         )
@@ -1094,7 +1148,7 @@ var Commentrow = function (_React$Component8) {
                     { className: 'd-flex w-100 justify-content-between' },
                     React.createElement(
                         'h6',
-                        { className: 'mb-1 text-truncate' },
+                        { className: 'mb-1' },
                         us_content
                     )
                 )
@@ -1143,7 +1197,7 @@ var Comment = function (_React$Component9) {
             var claim = window.sessionStorage.getItem("Credential");
 
             axios.post('/newcomment', {
-                c_id: c_id,
+                t_cid: c_id,
                 content: replycontent,
                 q_id: this.props.currentqid,
                 o_id: this.props.currentoid
@@ -1151,7 +1205,7 @@ var Comment = function (_React$Component9) {
             }).then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
-                    this.setState({ error: "Post success" });
+                    this.setState({ error: "Post success", replycontent: "", c_id: "-1" });
                     this.props.refresh(this.props.currentquestionkey);
                 } else {
                     this.setState({ error: "Post failed" });

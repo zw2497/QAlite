@@ -9,6 +9,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
+var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
 // var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
 
 var env = "http://localhost:3000";
@@ -58,6 +59,8 @@ var googleloginhulper = function googleloginhulper(id_token) {
     //     xhr.send('idtoken=' + id_token);
     //
     // }
+
+
     axios.post('/user/google', {
         idtoken: id_token
     }).then(function (response) {
