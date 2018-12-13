@@ -1,151 +1,312 @@
-axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+axios.defaults.baseURL = 'https://k3pw9p8ybg.execute-api.us-east-2.amazonaws.com/default/6156task2';
+var env = window.location.protocol + "//" + window.location.host;
 
-var env = "http://localhost:3000";
+
 // axios.defaults.baseURL = 'http://localhost:5000';
-
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
-function googlelogin() {
-    gapi.load('auth2', function() {
-        auth2 = gapi.auth2.init({
-            client_id: "1076764154881-jq0lgjdbeje9b5tsucimo3l8p48uen0v.apps.googleusercontent.com",
-            scope: "email",
-            ux_mode: "popup"
-        });
+// This example displays an address form, using the autocomplete feature
+// of the Google Places API to help users fill in the information.
 
-        // Sign the user in, and then retrieve their ID.
-        auth2.signIn().then(function() {
-            console.log("success");
-            var profile = auth2.currentUser.get().getBasicProfile();
-            console.log('ID: ' + profile.getId() + 'Name: ' + profile.getName() + 'Email: ' + profile.getEmail()) ;
-            let token = auth2.currentUser.Ab.Zi.id_token
-            googleloginhulper(token);
-        }, function() {
-            console.log("failed");
-        });
+// This example requires the Places library. Include the libraries=places
+// parameter when you first load the API. For example:
+// <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
 
+document.getElementById("home").href = env + "/class.html";
 
-    })
+var placeSearch, autocompletem, place;
+var componentForm = {
+    street_number: 'short_name',
+    route: 'long_name',
+    locality: 'long_name',
+    administrative_area_level_1: 'short_name',
+    country: 'long_name',
+    postal_code: 'short_name'
+};
+
+function initAutocomplete() {
+    // Create the autocomplete object, restricting the search to geographical
+    // location types.
+    autocomplete = new google.maps.places.Autocomplete(
+        /** @type {!HTMLInputElement} */(document.getElementById('autocomplete')),
+        {types: ['geocode']});
+
+    // When the user selects an address from the dropdown, populate the address
+    // fields in the form.
+    autocomplete.addListener('place_changed', fillInAddress);
 }
 
-let googleloginhulper = function(id_token) {
-    console.log("in")
-    // var xhr = new XMLHttpRequest();
-    // const url = 'http://127.0.0.1:5000/user/google'
-    // xhr.open('POST', url);
-    // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    // xhr.onload = function () {
-    //     let result = xhr.responseText;
-    //     console.log(result);
-    //     console.log(typeof result)
-    //     result = JSON.parse(result)
-    //     if (response.data.code === 1) {
-    //         let Credential = response.data.token;
-    //         console.log(Credential)
-    //         window.sessionStorage.setItem("Credential", Credential);
-    //         window.location.replace(env + "/class.html");
-    //     }
-    //     ;
-    //     xhr.send('idtoken=' + id_token);
-    //
-    // }
+function fillInAddress() {
+    // Get the place details from the autocomplete object.
+    place = autocomplete.getPlace();
 
+    console.log(place.address_components);
 
-    axios.post('/user/google', {
-        idtoken: id_token,
-    })
-        .then(function (response) {
-            if (response.data.code === 1) {
-                let Credential = response.data.token;
-                console.log(Credential);
-                window.sessionStorage.setItem("Credential", Credential);
-                window.location.replace(env + "/class.html");
-            }
-        })
+    for (var component in componentForm) {
+        document.getElementById(component).value = '';
+        document.getElementById(component).disabled = false;
+    }
+
+    // Get each component of the address from the place details
+    // and fill the corresponding field on the form.
+    for (var i = 0; i < place.address_components.length; i++) {
+        var addressType = place.address_components[i].types[0];
+        if (componentForm[addressType]) {
+            var val = place.address_components[i][componentForm[addressType]];
+            document.getElementById(addressType).value = val;
+        }
+    }
 }
 
-
-class Login extends React.Component {
+class Profile extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isChecked: true,
-            email: "",
-            password: "",
-            error:""
         };
-
-        this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
     }
 
-    handleChange(event) {
-        const target =  event.target;
-        const value = target.type === 'checkbox' ? target.checked : target.value;
-        const name = target.name;
-        this.setState({
-            [name]: value,
-        });
-    }
-
     handleSubmit(event) {
-        axios.post('/user/login', {
-            email: this.state.email,
-            password: this.state.password
-        })
-            .then(function (response) {
-                console.log(response);
-                if (response.data.code === 1) {
-                    let Credential = response.data.token;
-                    console.log(Credential)
-                    window.sessionStorage.setItem("Credential", Credential);
-                    window.location.replace(env + "/class.html");
-                } else{
-                    this.setState({error: "Incorrect username or password"});
-                }
-            }.bind(this))
-            .catch(function (error) {
-                console.log(error);
-            });
-
-        event.preventDefault();
+        // axios.post('/user/profile', {
+        //     email: this.state.email,
+        //     password: this.state.password
+        // })
+        //     .then(
+        //
+        //     ).bind(this)
     }
 
     render() {
         return (
-            <div className="modal-body text-center">
-                <form className="form-signin">
-                    <h1 className="h3 mb-3 font-weight-normal">Sign in</h1>
-
-                    {/*error message*/}
-                    <Errorno msg = {this.state.error} err = {this.state.error !== ""} id = "error"/>
-
-                    <label htmlFor="loginInputEmail" className ="sr-only">Email address</label>
-                    <input type="email" id="loginInputEmail" name = "email" className = "form-control" placeholder="Email address" value={this.state.email} onChange={this.handleChange} required
-                           autoFocus />
-                        <label htmlFor="loginInputPassword" className="sr-only">Password</label>
-                        <input type="password" id="loginInputPassword" name = "password" className="form-control" placeholder="Password" value={this.state.password} onChange={this.handleChange}
-                               required />
-                    <div className="checkbox mb-3">
-                        <label>
-                            <input type="checkbox" name = "isChecked" value={this.state.isChecked} checked={this.state.isChecked} onChange={this.handleChange} /> Remember me
-                        </label>
-                    </div>
-                </form>
-
-                <div className="modal-footer">
-                    <button className="btn btn-lg btn-primary" type="submit" onClick={this.handleSubmit} >Sign in</button>
-                    <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
-                </div>
-
-            </div>
-
-
-        );
+            <Inputgroup/>
+        )
     }
 }
+
+class Inputgroup extends React.Component{
+    constructor(props) {
+        super(props)
+        this.state = {
+            n:3,
+            data:{}
+        }
+        this.fetchprofile();
+
+
+
+        this.fetchprofile=this.fetchprofile.bind(this);
+        this.addrow=this.addrow.bind(this);
+        this.handlechange=this.handlechange.bind(this);
+        this.submit=this.submit.bind(this);
+    }
+
+    addrow() {
+        const n = this.state.n;
+        this.setState({n:n + 1})
+
+
+    }
+
+    fetchprofile() {
+        let data = this.state.data;
+
+        axios.get("",{
+            headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        }).then(function (res) {
+            console.log(res)
+            if (res.data.data.profile !== undefined){
+                const addr = res.data.data.profile.Address
+                for (let i = 0; i < addr.length; i++) {
+                    var addressType = addr[i].types[0];
+                    if (componentForm[addressType]) {
+                        var val = addr[i][componentForm[addressType]];
+                        document.getElementById(addressType).value = val;
+                    }
+                }
+                const comm = res.data.data.profile;
+                const idlist = ['inputGroup-phone', 'inputGroup-firstname','inputGroup-lastname']
+                const keylist = ['Phone', 'firstname','lastname']
+                console.log(comm);
+                for (var i = 0; i < 3; i ++) {
+                    var id = idlist[i];
+                    var val1 = comm[keylist[i]];
+                    console.log(id);
+                    console.log(val1);
+                    document.getElementById(id).value = val1;
+                    data[keylist[i]] = val1
+                }
+                this.setState({data: data})
+            }
+
+
+
+
+        }.bind(this))
+    }
+
+    submit() {
+        let data = this.state.data;
+        data["Address"] = place.address_components;
+        console.log(data)
+        axios.post("",{
+            data:data
+        },{
+            headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        }).then(function (res) {
+            console.log(res)
+            window.location.replace(env + "/profile.html");
+        }.bind(this))
+    }
+
+    handlechange(event){
+        const data = this.state.data;
+        data[event.target.name] = event.target.value
+        this.setState({data: data})
+    }
+
+    // componentDidMount() {
+    //     autocomplete = new google.maps.places.Autocomplete(
+    //         /** @type {!HTMLInputElement} */(document.getElementById('autocomplete')),
+    //         {types: ['geocode']});
+    //
+    //     // When the user selects an address from the dropdown, populate the address
+    //     // fields in the form.
+    //     autocomplete.addListener('place_changed', fillInAddress);
+    // }
+
+
+
+    render() {
+
+        return (
+            <div>
+                <Loading/>
+                <InputRow handlechange={this.handlechange}/>
+                <GoogleAddress handlechange={this.handlechange}/>
+                <button className="btn btn-outline-success" onClick={this.submit} >Submit</button>
+            </div>
+            )
+
+    }
+}
+
+class Loading extends React.Component {
+    constructor(props){
+        super(props);
+        this.state={n:0}
+
+        this.tick=this.tick.bind(this)
+    }
+
+    componentDidMount() {
+        this.timerID = setInterval(
+            () => this.tick(),
+            100
+        );
+    }
+
+    tick() {
+        console.log("in")
+        let n = this.state.n
+        if (n < 200) {
+            n = n + 50
+        } else {
+            clearInterval(this.timerID);
+        }
+        this.setState({
+            n: n
+        });
+    }
+
+    render(){
+        let load = []
+        const n = this.state.n
+        if (n < 200) {
+            load.push(
+                <div className={"progress"} key={"1"}>
+                <div className={"progress-bar progress-bar-striped"} role="progressbar" style={{"width": n + "%"}}
+                     aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">Loading...</div>
+                </div>
+            )
+        }
+
+
+        return (
+            <div>
+            {load}
+            </div>
+
+        )
+    }
+
+
+}
+
+function GoogleAddress(props) {
+    return (
+        <div>
+            <div className="input-group mb-3">
+                <div className="input-group-prepend">
+                    <span className="input-group-text" id="inputGroup-sizing-default">Address</span>
+                </div>
+                <input type="text" id="autocomplete" name={"Address"} onChange={props.handlechange} placeholder="Enter your address" className="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default" />
+            </div>
+            <table id="address">
+                <tbody>
+                <tr>
+                    <td className="label">Street address</td>
+                    <td className="slimField"><input className="field" id="street_number" disabled={true}/></td>
+                    <td className="wideField" colSpan={2}><input className="field" id="route" disabled={true}/></td>
+                </tr>
+                <tr>
+                    <td className="label">City</td>
+                    <td className="wideField" colSpan={3}><input className="field" id="locality" disabled={true}/></td>
+                </tr>
+                <tr>
+                    <td className="label">State</td>
+                    <td className="slimField"><input className="field" id="administrative_area_level_1"
+                                                     disabled={true}/></td>
+                    <td className="label">Zip code</td>
+                    <td className="wideField"><input className="field" id="postal_code" disabled={true}/></td>
+                </tr>
+                <tr>
+                    <td className="label">Country</td>
+                    <td className="wideField" colSpan={3}><input className="field" id="country" disabled={true}/></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    )
+}
+
+function InputRow(props) {
+    return (
+        <div>
+            <div className="input-group mb-3">
+                <div className="input-group-prepend">
+                    <span className="input-group-text" id="inputGroup-phone-span">Phone</span>
+                </div>
+                <input onChange={props.handlechange} id="inputGroup-phone" name={"Phone"} type="text" className="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default" />
+            </div>
+            <div className="input-group mb-3">
+                <div className="input-group-prepend">
+                    <span className="input-group-text" id="inputGroup-firstname-span">First Name</span>
+                </div>
+                <input onChange={props.handlechange} id="inputGroup-firstname" name={"firstname"} type="text" className="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default" />
+            </div>
+            <div className="input-group mb-3">
+                <div className="input-group-prepend">
+                    <span className="input-group-text" id="inputGroup-lastname-span">Last Name</span>
+                </div>
+                <input onChange={props.handlechange} id="inputGroup-lastname" name={"lastname"} type="text" className="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default" />
+            </div>
+
+        </div>
+
+    )
+}
+
+
 
 /**
  * @return {null}
@@ -160,98 +321,7 @@ function Errorno(props){
     }
 }
 
-
-
 ReactDOM.render(
-    <Login />,
-    document.getElementById('login')
-);
-
-
-class Register extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            isChecked: true,
-            email: "",
-            password: "",
-            name:"",
-            error:""
-        };
-
-        this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-    }
-
-    handleChange(event) {
-        const target =  event.target;
-        const value = target.type === 'checkbox' ? target.checked : target.value;
-        const name = target.name;
-        this.setState({
-            [name]: value,
-        });
-    }
-
-    handleSubmit(event) {
-        axios.post('/user/register', {
-            name: this.state.name,
-            email: this.state.email,
-            password: this.state.password
-        })
-            .then(function (response) {
-                console.log(response);
-                if (response.data.code === 1) {
-                        let Credential = response.data.token;
-                        console.log(Credential)
-                        window.sessionStorage.setItem("Credential", Credential);
-                        window.location.replace(env + "/class.html");
-                } else{
-                    this.setState({error: response.data.body});
-                }
-            }.bind(this))
-            .catch(function (error) {
-                console.log(error);
-            });
-
-        event.preventDefault();
-    }
-
-    render() {
-        return (
-            <div className="modal-body text-center">
-                <form className="form-signin">
-                    <h1 className="h3 mb-3 font-weight-normal">Register</h1>
-                    {/*error message*/}
-                    <Errorno msg = {this.state.error} err = {this.state.error !== ""} id = "error"/>
-
-                    <label htmlFor="registerInputEmail" className ="sr-only">User Name</label>
-                    <input type="email" id="registerInputName" name = "name" className = "form-control" placeholder="User name" value={this.state.name} onChange={this.handleChange} required
-                           autoFocus />
-                    <label htmlFor="registerInputEmail" className ="sr-only">Email address</label>
-                    <input type="email" id="registerInputEmail" name = "email" className = "form-control" placeholder="Email address" value={this.state.email} onChange={this.handleChange} required
-                           autoFocus />
-                    <label htmlFor="registerInputPassword" className="sr-only">Password</label>
-                    <input type="password" id="registerInputPassword" name = "password" className="form-control" placeholder="Password" value={this.state.password} onChange={this.handleChange}
-                           required />
-                    <div className="checkbox mb-3">
-                        <label>
-                            <input type="checkbox" name = "isChecked" value={this.state.isChecked} checked={this.state.isChecked} onChange={this.handleChange} /> Remember me
-                        </label>
-                    </div>
-                </form>
-
-                <div className="modal-footer">
-                    <button className="btn btn-lg btn-primary" type="submit" onClick={this.handleSubmit} >Register</button>
-                    <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
-                </div>
-
-            </div>
-
-        );
-    }
-}
-
-ReactDOM.render(
-    <Register />,
-    document.getElementById('register')
+    <Profile />,
+    document.getElementById('profile')
 );

@@ -14,10 +14,35 @@
     <!--React js-->
     <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <!--<script src="https://apis.google.com/js/platform.js" async defer></script>-->
+
 
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="./stylesheets/login.css">
+
+    <style>
+        #locationField, #controls {
+            position: relative;
+            width: 480px;
+        }
+
+        #address td {
+            font-size: 13pt;
+        }
+        .field {
+            width: 99%;
+        }
+        .slimField {
+            width: 80px;
+        }
+        .wideField {
+            width: 200px;
+        }
+        #locationField {
+            height: 20px;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -43,7 +68,7 @@
     </div>
     <div class="navbar navbar-dark bg-dark shadow-sm">
         <div class="container d-flex justify-content-between">
-            <a href="#" class="navbar-brand d-flex align-items-center">
+            <a id = 'home' href="#" class="navbar-brand d-flex align-items-center">
                 <strong>QAlite</strong>
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,56 +81,11 @@
 <main role="main">
 
     <section class="jumbotron text-center">
-        <div class="container">
-            <h1 class="jumbotron-heading">Introducing QAlite</h1>
-            <p class="lead text-muted">A course project made in Columbia University.</p>
-            <p class="lead text-muted">Server: AWS S3, AWS Elastic Beanstalk</p>
-
-            <a href="#" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#loginModalCenter" style="min-width: 150px">Login</a>
-            <a href="#" class="btn btn-secondary btn-lg" data-toggle="modal" data-target="#registerModalCenter" style="min-width: 150px" >Register</a>
-            <a href="#" class="btn btn-success btn-lg" onclick="googlelogin()" style="min-width: 150px">Google</a>
 
 
-        </div>
+        <div id="profile"/>
+
     </section>
-
-    <!-- Modal Login-->
-    <div class="modal fade" id="loginModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLongTitle">QAlite</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-
-                <!-- react login-->
-                <div id="login"></div>
-
-
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Login-->
-    <div class="modal fade" id="registerModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="registerModalLongTitle">QAlite</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-
-                <!-- react login-->
-                <div id="register"></div>
-
-
-            </div>
-        </div>
-    </div>
 
 
 
@@ -124,9 +104,12 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 <!--request-->
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-<!-- Load our React component. -->
-<script src="javascripts/licontroller.js"></script>
 
+<!-- Load our React component. -->
+<script src="javascripts/profile.js"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBg_9S49ZNW0ZiwTUlteoXATmqI7MkyUSE&libraries=places&callback=initAutocomplete"
+        async defer></script>
 
 </body>
 </html>

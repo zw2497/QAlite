@@ -95,9 +95,11 @@ def create_app(test_config=None):
         # p = "INSERT INTO users (email, password, name) VALUES (%s, %s, %s)"
         # result = db.execute(p, ("zw2497@columbia.edu", "123456", "wzc"))
 
-        p = "SELECT name FROM users WHERE email = %s"
-        result = db.execute(p, ("zw2497@columbia.edu")).fetchone()
-        return jsonify(body=result['name'])
+        p = "SELECT * FROM test"
+        result = db.execute(p).fetchall()
+        res = [dict(r) for r in result]
+
+        return jsonify(test=res, code=1)
 
 
     @app.route('/user/register', methods=['POST', 'GET'])
@@ -297,9 +299,9 @@ def create_app(test_config=None):
             "us.name as us_name, ut.name as ut_name " \
             "from comments cs  " \
             "left outer join reply r " \
-            "on cs.id = r.target " \
+            "on cs.id = r.source " \
             "left outer join comments ct " \
-            "on r.source = ct.id " \
+            "on r.target = ct.id " \
             "left outer join users us " \
             "on cs.creator_id = us.id " \
             "left outer join users ut " \
@@ -356,11 +358,13 @@ def create_app(test_config=None):
                 p = "INSERT INTO comments(create_time, creator_id, content, q_id) VALUES (CURRENT_TIMESTAMP, %s, %s, %s)"
                 result = db.execute(p, (u_id, content, q_id))
 
-
-
                 if (t_cid != '-1'):
+                    p = "select creator_id from comments where id = %s"
+                    result3 = db.execute(p, (t_cid)).fetchone()
+
+
                     p = "select email from users where id = %s"
-                    result1 = db.execute(p, (u_id)).fetchone()
+                    result1 = db.execute(p, (result3['creator_id'])).fetchone()
 
                     p = "select name from courses where id = %s"
                     result2 = db.execute(p, (o_id)).fetchone()
@@ -500,7 +504,7 @@ def create_app(test_config=None):
         else:
             return jsonify(status=401, msg="invalid", code=0)
 
-        return redirect("http://localhost:3000")
+        return redirect("http://localhost:3000/class.html")
 
 
 

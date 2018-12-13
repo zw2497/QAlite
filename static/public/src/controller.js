@@ -1,10 +1,10 @@
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+axios.defaults.headers.post['Content-Type'] = 'application/json';
+var env = window.location.protocol + "//" + window.location.host;
 
 // axios.defaults.baseURL = 'http://localhost:5000';
-var env = "http://localhost:3000";
-axios.defaults.headers.post['Content-Type'] = 'application/json';
+
+
 
 class App extends React.Component{
     constructor (props) {
@@ -31,14 +31,14 @@ class App extends React.Component{
         };
 
         // check Credential
-        var claim = window.sessionStorage.getItem("Credential");
+        var claim = window.localStorage.getItem("Credential");
         if (!claim){
             window.location.replace(env);
             console.log("redirect")
         }
 
         axios.get('/user', {
-            headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+            headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
         }).then(
             function (response) {
                 if (response.data.code === 1) {
@@ -50,7 +50,7 @@ class App extends React.Component{
 
         // query question and class
         axios.get('/class', {
-            headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+            headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
         })
             .then(function (response) {
                 console.log(response);
@@ -61,7 +61,7 @@ class App extends React.Component{
 
                     axios.post('/question',{
                         o_id: this.state.classes[this.state.currentclasskey].o_id
-                    },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                    },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
                     })
                         .then(function (response) {
                             console.log(response);
@@ -72,7 +72,7 @@ class App extends React.Component{
                                 axios.post('/comment',{
                                     o_id: this.state.currentoid,
                                     q_id: this.state.currentqid
-                                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                                },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
                                 })
                                     .then(function (response) {
                                         console.log(response);
@@ -126,7 +126,7 @@ class App extends React.Component{
     }
 
     handleLogout(event) {
-        window.sessionStorage.removeItem('Credential');
+        window.localStorage.removeItem('Credential');
         window.location.reload();
     }
 
@@ -135,7 +135,7 @@ class App extends React.Component{
             () => {
                 axios.post('/question',{
                     o_id: this.state.currentoid
-                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
                 })
                     .then(function (response) {
                         console.log(response);
@@ -147,7 +147,7 @@ class App extends React.Component{
                             axios.post('/comment',{
                                 o_id: this.state.currentoid,
                                 q_id: this.state.currentqid
-                            },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                            },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
                             })
                                 .then(function (response) {
                                     console.log(response);
@@ -190,7 +190,7 @@ class App extends React.Component{
                 axios.post('/comment',{
                     o_id: this.state.currentoid,
                     q_id: this.state.currentqid
-                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
                 })
                     .then(function (response) {
                         console.log(response);
@@ -214,7 +214,7 @@ class App extends React.Component{
                 axios.post('/comment',{
                     o_id: this.state.currentoid,
                     q_id: this.state.currentqid
-                },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+                },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
                 })
                     .then(function (response) {
                         console.log(response);
@@ -298,7 +298,7 @@ class App extends React.Component{
                                     <ul className="nav navbar-nav ml-auto">
                                         <li className="nav-item">
                                             <div className="nav-link">
-                                                <a className="nav-link" href={env + '/profile'} >{this.state.u_name}</a>
+                                                <a className="nav-link" href={env + '/profile.html'} >{this.state.u_name}</a>
                                             </div>
                                         </li>
                                         <li className="nav-item">
@@ -382,7 +382,7 @@ class Newpostmodal extends React.Component {
     }
 
     handleSubmit(event) {
-        let claim = window.sessionStorage.getItem("Credential");
+        let claim = window.localStorage.getItem("Credential");
 
         axios.post('/newpost',{
             title: this.state.title,
@@ -411,7 +411,7 @@ class Newpostmodal extends React.Component {
     handleSearch(event) {
         axios.post('/allclass',{
             search: this.state.search
-        },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
         })
             .then(function (response) {
                 console.log(response);
@@ -432,7 +432,7 @@ class Newpostmodal extends React.Component {
     handleadd(oid) {
         axios.post('/addclass',{
             o_id: oid
-        },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
         })
             .then(function (response) {
                 console.log(response);
@@ -465,7 +465,7 @@ class Newpostmodal extends React.Component {
             description: this.state.description,
             termyear: term[0],
             termsemester:  term[1]
-        },{headers: {'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json'}
+        },{headers: {'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json'}
         })
             .then(function (response) {
                 console.log(response);
@@ -496,7 +496,10 @@ class Newpostmodal extends React.Component {
                     <li key = {i}>
                         <div>
                             {classi.o_name}
-                            <button className={"btn btn-primary btn-sm"} onClick={() => this.handleadd(classi.id)}>ADD</button>
+                            <div style={{'text-align': 'right'}}>
+                            <button className={"btn btn-success btn-sm"} onClick={() => this.handleadd(classi.id)}>ADD</button>
+                                <div className="line" />
+                            </div>
                         </div>
 
                     </li>
@@ -562,7 +565,7 @@ class Newpostmodal extends React.Component {
                                     <span aria-hidden="true">×</span>
                                 </button>
                             </div>
-                            <div className="modal-body text-center">
+                            <div className="modal-body">
 
                                 <h1 className="h3 mb-3 font-weight-normal text-center">Course</h1>
 
@@ -571,13 +574,16 @@ class Newpostmodal extends React.Component {
 
 
 
-                                <form className="form-inline text-center">
-                                    <input value={this.state.search} onChange={this.handleChange} name={"search"} className="form-control"/>
-                                    <button className="btn btn-outline-success" onClick={this.handleSearch}>Search</button>
+                                <form className="form-inline">
+                                    <input  style={{'marginLeft':'18px'}} value={this.state.search} onChange={this.handleChange} name={"search"} className="form-control"/>
+                                    <button style={{'align':'right'}} className="btn btn-outline-success" onClick={this.handleSearch}>Search</button>
                                 </form>
-                                <ul>
-                                    {rows}
-                                </ul>
+                                <div style={{'overflow':'hidden', 'overflowY':'scroll', 'height': '300px'}}>
+                                    <ul>
+                                        {rows}
+                                    </ul>
+                                </div>
+
 
                                 <div className="modal-footer">
                                     <button type="button " className="btn btn-secondary btn-lg" data-dismiss="modal">Close</button>
@@ -725,7 +731,7 @@ class Questionrow extends React.Component {
         const question = this.props.question;
         const title = question['title'];
         const content = question['content'];
-        const type = question['q_type'];
+        const type = question['type'];
         return (
             <a onClick={this.handleclick} href="#" className="list-group-item list-group-item-action flex-column align-items-start">
                 <div className="d-flex w-100 justify-content-between">
@@ -843,7 +849,7 @@ class Comment extends React.Component {
         const c_id = this.state.c_id;
         const replycontent = this.state.replycontent;
 
-        let claim = window.sessionStorage.getItem("Credential");
+        let claim = window.localStorage.getItem("Credential");
 
         axios.post('/newcomment',{
             t_cid: c_id,

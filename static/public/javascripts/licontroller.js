@@ -9,9 +9,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
-
-var env = "http://localhost:3000";
+var env = window.location.protocol + "//" + window.location.host;
+console.log(env);
 // axios.defaults.baseURL = 'http://localhost:5000';
 
 axios.defaults.headers.post['Content-Type'] = 'application/json';
@@ -51,7 +50,7 @@ var googleloginhulper = function googleloginhulper(id_token) {
     //     if (response.data.code === 1) {
     //         let Credential = response.data.token;
     //         console.log(Credential)
-    //         window.sessionStorage.setItem("Credential", Credential);
+    //         window.localStorage.setItem("Credential", Credential);
     //         window.location.replace(env + "/class.html");
     //     }
     //     ;
@@ -64,7 +63,7 @@ var googleloginhulper = function googleloginhulper(id_token) {
         if (response.data.code === 1) {
             var Credential = response.data.token;
             console.log(Credential);
-            window.sessionStorage.setItem("Credential", Credential);
+            window.localStorage.setItem("Credential", Credential);
             window.location.replace(env + "/class.html");
         }
     });
@@ -109,7 +108,8 @@ var Login = function (_React$Component) {
                 if (response.data.code === 1) {
                     var Credential = response.data.token;
                     console.log(Credential);
-                    window.sessionStorage.setItem("Credential", Credential);
+                    window.localStorage.setItem("Credential", Credential);
+                    console.log(env + "/class.html");
                     window.location.replace(env + "/class.html");
                 } else {
                     this.setState({ error: "Incorrect username or password" });
@@ -241,7 +241,7 @@ var Register = function (_React$Component2) {
                 if (response.data.code === 1) {
                     var Credential = response.data.token;
                     console.log(Credential);
-                    window.sessionStorage.setItem("Credential", Credential);
+                    window.localStorage.setItem("Credential", Credential);
                     window.location.replace(env + "/class.html");
                 } else {
                     this.setState({ error: response.data.body });

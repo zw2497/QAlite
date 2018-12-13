@@ -9,12 +9,11 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 axios.defaults.baseURL = 'http://6156.us-east-2.elasticbeanstalk.com';
-var backend = 'http://6156.us-east-2.elasticbeanstalk.com';
-// var env = "http://qalite.s3-website.us-east-2.amazonaws.com";
+axios.defaults.headers.post['Content-Type'] = 'application/json';
+var env = window.location.protocol + "//" + window.location.host;
 
 // axios.defaults.baseURL = 'http://localhost:5000';
-var env = "http://localhost:3000";
-axios.defaults.headers.post['Content-Type'] = 'application/json';
+
 
 var App = function (_React$Component) {
     _inherits(App, _React$Component);
@@ -45,14 +44,14 @@ var App = function (_React$Component) {
         };
 
         // check Credential
-        var claim = window.sessionStorage.getItem("Credential");
+        var claim = window.localStorage.getItem("Credential");
         if (!claim) {
             window.location.replace(env);
             console.log("redirect");
         }
 
         axios.get('/user', {
-            headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+            headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
         }).then(function (response) {
             if (response.data.code === 1) {
                 console.log(response);
@@ -62,7 +61,7 @@ var App = function (_React$Component) {
 
         // query question and class
         axios.get('/class', {
-            headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+            headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
         }).then(function (response) {
             console.log(response);
             if (response.data.code === 1 && response.data.classinfo[0] !== undefined) {
@@ -72,7 +71,7 @@ var App = function (_React$Component) {
 
                 axios.post('/question', {
                     o_id: this.state.classes[this.state.currentclasskey].o_id
-                }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                 }).then(function (response) {
                     console.log(response);
                     if (response.data.code === 1 && response.data.question[this.state.currentquestionkey] !== undefined) {
@@ -82,7 +81,7 @@ var App = function (_React$Component) {
                         axios.post('/comment', {
                             o_id: this.state.currentoid,
                             q_id: this.state.currentqid
-                        }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                        }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                         }).then(function (response) {
                             console.log(response);
                             if (response.data.code === 1) {
@@ -131,7 +130,7 @@ var App = function (_React$Component) {
     _createClass(App, [{
         key: 'handleLogout',
         value: function handleLogout(event) {
-            window.sessionStorage.removeItem('Credential');
+            window.localStorage.removeItem('Credential');
             window.location.reload();
         }
     }, {
@@ -142,7 +141,7 @@ var App = function (_React$Component) {
             this.setState({ currentclasskey: key, currentoid: this.state.classes[key].o_id }, function () {
                 axios.post('/question', {
                     o_id: _this2.state.currentoid
-                }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                 }).then(function (response) {
                     console.log(response);
                     if (response.data.code === 1 && response.data.question[0] !== undefined) {
@@ -152,7 +151,7 @@ var App = function (_React$Component) {
                         axios.post('/comment', {
                             o_id: this.state.currentoid,
                             q_id: this.state.currentqid
-                        }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                        }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                         }).then(function (response) {
                             console.log(response);
                             if (response.data.code === 1) {
@@ -188,7 +187,7 @@ var App = function (_React$Component) {
                 axios.post('/comment', {
                     o_id: _this3.state.currentoid,
                     q_id: _this3.state.currentqid
-                }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                 }).then(function (response) {
                     console.log(response);
                     if (response.data.code === 1) {
@@ -210,7 +209,7 @@ var App = function (_React$Component) {
                 axios.post('/comment', {
                     o_id: _this4.state.currentoid,
                     q_id: _this4.state.currentqid
-                }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+                }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
                 }).then(function (response) {
                     console.log(response);
                     if (response.data.code === 1) {
@@ -314,7 +313,7 @@ var App = function (_React$Component) {
                                                 { className: 'nav-link' },
                                                 React.createElement(
                                                     'a',
-                                                    { className: 'nav-link', href: env + '/profile' },
+                                                    { className: 'nav-link', href: env + '/profile.html' },
                                                     this.state.u_name
                                                 )
                                             )
@@ -429,7 +428,7 @@ var Newpostmodal = function (_React$Component2) {
     }, {
         key: 'handleSubmit',
         value: function handleSubmit(event) {
-            var claim = window.sessionStorage.getItem("Credential");
+            var claim = window.localStorage.getItem("Credential");
 
             axios.post('/newpost', {
                 title: this.state.title,
@@ -457,7 +456,7 @@ var Newpostmodal = function (_React$Component2) {
         value: function handleSearch(event) {
             axios.post('/allclass', {
                 search: this.state.search
-            }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+            }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
             }).then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
@@ -476,7 +475,7 @@ var Newpostmodal = function (_React$Component2) {
         value: function handleadd(oid) {
             axios.post('/addclass', {
                 o_id: oid
-            }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+            }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
             }).then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
@@ -507,7 +506,7 @@ var Newpostmodal = function (_React$Component2) {
                 description: this.state.description,
                 termyear: term[0],
                 termsemester: term[1]
-            }, { headers: { 'Credential': window.sessionStorage.getItem("Credential"), 'Content-Type': 'application/json' }
+            }, { headers: { 'Credential': window.localStorage.getItem("Credential"), 'Content-Type': 'application/json' }
             }).then(function (response) {
                 console.log(response);
                 if (response.data.code === 1) {
@@ -540,11 +539,16 @@ var Newpostmodal = function (_React$Component2) {
                         null,
                         classi.o_name,
                         React.createElement(
-                            'button',
-                            { className: "btn btn-primary btn-sm", onClick: function onClick() {
-                                    return _this6.handleadd(classi.id);
-                                } },
-                            'ADD'
+                            'div',
+                            { style: { 'text-align': 'right' } },
+                            React.createElement(
+                                'button',
+                                { className: "btn btn-success btn-sm", onClick: function onClick() {
+                                        return _this6.handleadd(classi.id);
+                                    } },
+                                'ADD'
+                            ),
+                            React.createElement('div', { className: 'line' })
                         )
                     )
                 ));
@@ -667,7 +671,7 @@ var Newpostmodal = function (_React$Component2) {
                             ),
                             React.createElement(
                                 'div',
-                                { className: 'modal-body text-center' },
+                                { className: 'modal-body' },
                                 React.createElement(
                                     'h1',
                                     { className: 'h3 mb-3 font-weight-normal text-center' },
@@ -676,18 +680,22 @@ var Newpostmodal = function (_React$Component2) {
                                 React.createElement(Errorno, { msg: this.state.error, err: this.state.error !== "", id: 'error' }),
                                 React.createElement(
                                     'form',
-                                    { className: 'form-inline text-center' },
-                                    React.createElement('input', { value: this.state.search, onChange: this.handleChange, name: "search", className: 'form-control' }),
+                                    { className: 'form-inline' },
+                                    React.createElement('input', { style: { 'marginLeft': '18px' }, value: this.state.search, onChange: this.handleChange, name: "search", className: 'form-control' }),
                                     React.createElement(
                                         'button',
-                                        { className: 'btn btn-outline-success', onClick: this.handleSearch },
+                                        { style: { 'align': 'right' }, className: 'btn btn-outline-success', onClick: this.handleSearch },
                                         'Search'
                                     )
                                 ),
                                 React.createElement(
-                                    'ul',
-                                    null,
-                                    rows
+                                    'div',
+                                    { style: { 'overflow': 'hidden', 'overflowY': 'scroll', 'height': '300px' } },
+                                    React.createElement(
+                                        'ul',
+                                        null,
+                                        rows
+                                    )
                                 ),
                                 React.createElement(
                                     'div',
@@ -1000,7 +1008,7 @@ var Questionrow = function (_React$Component5) {
             var question = this.props.question;
             var title = question['title'];
             var content = question['content'];
-            var type = question['q_type'];
+            var type = question['type'];
             return React.createElement(
                 'a',
                 { onClick: this.handleclick, href: '#', className: 'list-group-item list-group-item-action flex-column align-items-start' },
@@ -1194,7 +1202,7 @@ var Comment = function (_React$Component9) {
             var c_id = this.state.c_id;
             var replycontent = this.state.replycontent;
 
-            var claim = window.sessionStorage.getItem("Credential");
+            var claim = window.localStorage.getItem("Credential");
 
             axios.post('/newcomment', {
                 t_cid: c_id,
