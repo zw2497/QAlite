@@ -4,7 +4,30 @@ This project combines w4111 Database with e6156 Microservices in Columbia Univer
 ## 1. Project Description 
 ![](./doc/intro.gif)
 
-I would like to implement a Piazza on our own. Student can interact with instructors with Posts. One of the functions we want to add is *Votes*. Further, we will reorder the *post list*  and *answer list* by this score like Reddit. This project will include entities such as *Post, Comment, User, Course, Vote, Instructor, Student* and so on. *User* can be *instructor and Student*.  *Post* have attributes such as *Content, Views, Thank_Number, Status*. Course will have some attributes such as *Number, Term, Name*. We will make up our own data by conversing content from piazza and inserting some random users. User can also enrolled in many courses. They can reply to comments and posts, add questions to their favorite and vote for the questions they think is valuable. Specific user can pin questions or comments and choose whether questions are resolved.
+**QAlite** is basically a simple reimplementation of Piazza. 
+
+* Student can interact with instructors with posts. 
+
+* They can enroll in courses, add posts, and reply to comments.
+
+## 2. Usage
+
+### Front-end:
+
+* Bootstrap
+* React
+* AWS S3
+* AWS CloudFront
+
+### Back-end
+
+* AWS EB: Flask, NodeJS (In developing...)
+* AWS Lambda: Profile management, Email notification trigger
+* AWS DynamoDB: Profile address storage
+* AWS API Gateway: Simple https
+* AWS SES: Email 
+* AWS SNS: Communication between Microservices
+* AWS RDS: PostgreSQL
 
 ## 2. SQL schema
 ```
