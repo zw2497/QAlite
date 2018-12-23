@@ -2,12 +2,11 @@
 This project combines w4111 Database with e6156 Microservices in Columbia University.
 
 ## 1. Project Description 
-We would like to implement a Piazza on our own. Student can interact with instructors with Posts. One of the functions we want to add is *Votes*. Further, we will reorder the *post list*  and *answer list* by this score like Reddit. This project will include entities such as *Post, Comment, User, Course, Vote, Instructor, Student* and so on. *User* can be *instructor and Student*.  *Post* have attributes such as *Content, Views, Thank_Number, Status*. Course will have some attributes such as *Number, Term, Name*. We will make up our own data by conversing content from piazza and inserting some random users. User can also enrolled in many courses. They can reply to comments and posts, add questions to their favorite and vote for the questions they think is valuable. Specific user can pin questions or comments and choose whether questions are resolved.
+![](./doc/intro.gif)
 
-## 2. Contingency Plan
-I will not implement the entities such as *Vote, Organizer, Event*. only implement the basic function of piazza with 4 entities: *User, Course, Post and Comment*.
+I would like to implement a Piazza on our own. Student can interact with instructors with Posts. One of the functions we want to add is *Votes*. Further, we will reorder the *post list*  and *answer list* by this score like Reddit. This project will include entities such as *Post, Comment, User, Course, Vote, Instructor, Student* and so on. *User* can be *instructor and Student*.  *Post* have attributes such as *Content, Views, Thank_Number, Status*. Course will have some attributes such as *Number, Term, Name*. We will make up our own data by conversing content from piazza and inserting some random users. User can also enrolled in many courses. They can reply to comments and posts, add questions to their favorite and vote for the questions they think is valuable. Specific user can pin questions or comments and choose whether questions are resolved.
 
-## 3. SQL schema
+## 2. SQL schema
 ```
 CREATE TABLE users(
 id        SERIAL PRIMARY KEY,
@@ -96,7 +95,7 @@ PRIMARY KEY (q_id, u_id)
 );
 ```
 
-## 4. Run some queries
+## 3. Run some queries
 #### Display the number of comments for every question which have more than one comment
 ```
 SELECT q.q_id AS questionid, q.title AS title, Count(*) AS comment_num
@@ -123,7 +122,7 @@ FROM comments AS c, question_belong_ask AS q
 WHERE c.q_id = q.q_id and q.solved_type = 'unresolved')
 ```
 
-## 5. Descriptions of any changes
+## 4. Updates
 * Modified the comment table so that it has a partial key, primary key (c_id, p_id), because it is a weak entity of questions.
 * Modified the reply table to make sure comment reply to comment and both of them belongs to the same question
 * Separated multiple relations between user and organization
