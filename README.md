@@ -1,7 +1,7 @@
 # QALite
 This project combines w4111 Database with e6156 Microservices in Columbia University.
 
-## 1. Project Description 
+## 1. Description 
 ![](./doc/intro.gif)
 
 **QAlite** is basically a simple reimplementation of Piazza. 
@@ -19,7 +19,7 @@ This project combines w4111 Database with e6156 Microservices in Columbia Univer
 * AWS S3
 * AWS CloudFront
 
-### Back-end
+### Back-end:
 
 * AWS EB: Flask, NodeJS (In developing...)
 * AWS Lambda: Profile management, Email notification trigger
@@ -29,7 +29,7 @@ This project combines w4111 Database with e6156 Microservices in Columbia Univer
 * AWS SNS: Communication between Microservices
 * AWS RDS: PostgreSQL
 
-## 2. SQL schema
+## 2.Database schema
 ```
 CREATE TABLE users(
 id        SERIAL PRIMARY KEY,
@@ -118,7 +118,7 @@ PRIMARY KEY (q_id, u_id)
 );
 ```
 
-## 3. Run some queries
+## 3. Test some queries
 #### Display the number of comments for every question which have more than one comment
 ```
 SELECT q.q_id AS questionid, q.title AS title, Count(*) AS comment_num
